@@ -1,24 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:todo/data/todo.dart';
 import 'package:todo/logic/todo_manager.dart';
 
-class DetailsPage extends StatelessWidget {
-  final String categoryTitle;
-  final int taskIndex;
+class DetailsPage extends ConsumerWidget {
   final ElementTask task;
 
-  const DetailsPage({
-    super.key,
-    required this.categoryTitle,
-    required this.taskIndex,
-    required this.task,
-  });
+  const DetailsPage({super.key, required this.task});
 
   @override
-  Widget build(BuildContext context) {
-    final taskProvider = Provider.of<TaskProvider>(context);
-
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(title: const Text('Task Details')),
       body: Padding(
@@ -40,8 +31,13 @@ class DetailsPage extends StatelessWidget {
             Row(
               children: [
                 ElevatedButton.icon(
-                  onPressed: () {
-                    // taskProvider.toggleTaskDone(categoryTitle, taskIndex);
+                  onPressed: () async {
+                    await ref
+                        .read(taskListProvider.notifier)
+                        .toggleTaskStatus(task.id);
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                    }
                   },
                   icon: Icon(task.isPending ? Icons.undo : Icons.check),
                   label: Text(
@@ -50,9 +46,13 @@ class DetailsPage extends StatelessWidget {
                 ),
                 const SizedBox(width: 10),
                 ElevatedButton.icon(
-                  onPressed: () {
-                    // taskProvider.deleteTask(categoryTitle, taskIndex);
-                    Navigator.pop(context);
+                  onPressed: () async {
+                    await ref
+                        .read(taskListProvider.notifier)
+                        .deleteTask(task.id);
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                    }
                   },
                   icon: const Icon(Icons.delete),
                   label: const Text('Delete'),

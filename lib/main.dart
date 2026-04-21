@@ -1,17 +1,11 @@
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:todo/logic/todo_manager.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:todo/task/task_page.dart';
 import 'home/home_screen.dart';
 
 main() {
-  runApp(
-    ChangeNotifierProvider(
-      create: (context) => TaskProvider(),
-      child: const TodoApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: TodoApp()));
 }
 
 class TodoApp extends StatelessWidget {

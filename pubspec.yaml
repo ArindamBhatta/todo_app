@@ -19,9 +19,12 @@ dependencies:
   curved_navigation_bar: ^1.0.6
   animations: ^2.0.11
   tab_indicator_styler: ^2.0.0
-  provider: ^6.1.4
+  flutter_riverpod: ^2.6.1
   intl: ^0.20.2
   uuid: ^4.5.1
+  sqflite: ^2.4.2
+  path: ^1.9.1
+  shared_preferences: ^2.5.3
 
 dev_dependencies:
   flutter_test:

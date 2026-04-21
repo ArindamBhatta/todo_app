@@ -4,7 +4,7 @@ import 'package:todo/data/todo.dart';
 import 'package:intl/intl.dart';
 
 class AddTaskForm extends StatefulWidget {
-  final Function(String title, ElementTask newTask) onAdd;
+  final Future<void> Function(ElementTask newTask) onAdd;
 
   const AddTaskForm({required this.onAdd, super.key});
 
@@ -15,9 +15,9 @@ class AddTaskForm extends StatefulWidget {
 class _AddTaskFormState extends State<AddTaskForm> {
   //* Properties
   final _formKey = GlobalKey<FormState>();
-  String title = 'Urgent Important';
+  String title = UrgencyLevel.urgentImportant.value;
   String name = '';
-  String category = 'Office';
+  String category = Category.office.value;
   DateTime startTime = DateTime.now();
   DateTime absoluteDeadline = DateTime.now().add(Duration(hours: 1));
   DateTime desireDeadline = DateTime.now().add(Duration(days: 1));
@@ -95,16 +95,11 @@ class _AddTaskFormState extends State<AddTaskForm> {
                         child: DropdownButtonFormField<String>(
                           value: title,
                           items:
-                              [
-                                    'Urgent Important',
-                                    'Not Important Urgent',
-                                    'Important Not Urgent',
-                                    'Not Important Not Urgent',
-                                  ]
+                              UrgencyLevel.values
                                   .map(
-                                    (e) => DropdownMenuItem(
-                                      value: e,
-                                      child: Text(e),
+                                    (e) => DropdownMenuItem<String>(
+                                      value: e.value,
+                                      child: Text(e.value),
                                     ),
                                   )
                                   .toList(),
@@ -120,21 +115,11 @@ class _AddTaskFormState extends State<AddTaskForm> {
                         child: DropdownButtonFormField<String>(
                           value: category,
                           items:
-                              [
-                                    'Office',
-                                    'Health',
-                                    'Finance',
-                                    'Home',
-                                    'Personal',
-                                    'Career',
-                                    'Self',
-                                    'Leisure',
-                                    'Fun',
-                                  ]
+                              Category.values
                                   .map(
-                                    (e) => DropdownMenuItem(
-                                      value: e,
-                                      child: Text(e),
+                                    (e) => DropdownMenuItem<String>(
+                                      value: e.value,
+                                      child: Text(e.value),
                                     ),
                                   )
                                   .toList(),
@@ -229,10 +214,9 @@ class _AddTaskFormState extends State<AddTaskForm> {
                         ),
                       ),
                       child: const Text('Add Task'),
-                      onPressed: () {
+                      onPressed: () async {
                         if (_formKey.currentState!.validate()) {
-                          widget.onAdd(
-                            title,
+                          await widget.onAdd(
                             ElementTask(
                               name: name,
                               urgencyLevel: title,
@@ -244,7 +228,9 @@ class _AddTaskFormState extends State<AddTaskForm> {
                               desireDeadline: desireDeadline,
                             ),
                           );
-                          Navigator.pop(context);
+                          if (mounted) {
+                            Navigator.pop(context);
+                          }
                         }
                       },
                     ),

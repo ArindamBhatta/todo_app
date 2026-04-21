@@ -1,44 +1,56 @@
-import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:todo/data/todo.dart';
+import 'package:todo/data/todo_repository.dart';
 
-class TaskProvider with ChangeNotifier {
-  final List<ElementTask> _tasks = dummyData;
+final todoRepositoryProvider = Provider<TodoRepository>((ref) {
+  return TodoRepository();
+});
 
-  List<ElementTask> get tasks => [..._tasks];
+final taskListProvider =
+    AsyncNotifierProvider<TaskListNotifier, List<ElementTask>>(
+      TaskListNotifier.new,
+    );
 
-  void addTask(ElementTask task) {
-    _tasks.add(task);
-    notifyListeners();
+class TaskListNotifier extends AsyncNotifier<List<ElementTask>> {
+  late final TodoRepository _repository;
+
+  @override
+  Future<List<ElementTask>> build() async {
+    _repository = ref.read(todoRepositoryProvider);
+    return _repository.fetchTasks();
   }
 
-  void updateTask(int index, ElementTask updatedTask) {
-    if (index >= 0 && index < _tasks.length) {
-      _tasks[index] = updatedTask;
-      notifyListeners();
-    }
+  Future<void> _refresh() async {
+    state = const AsyncLoading();
+    state = AsyncData(await _repository.fetchTasks());
   }
 
-  void deleteTask(int index) {
-    if (index >= 0 && index < _tasks.length) {
-      _tasks.removeAt(index);
-      notifyListeners();
-    }
+  Future<void> addTask(ElementTask task) async {
+    await _repository.insertTask(task);
+    await _refresh();
   }
 
-  void toggleTaskStatus(int index) {
-    if (index >= 0 && index < _tasks.length) {
-      final task = _tasks[index];
-      _tasks[index] = ElementTask(
-        name: task.name,
-        urgencyLevel: task.urgencyLevel,
-        color: task.color,
-        isPending: !task.isPending,
-        startTime: task.startTime,
-        absoluteDeadline: task.absoluteDeadline,
-        desireDeadline: task.desireDeadline,
-        category: task.category,
-      );
-      notifyListeners();
+  Future<void> updateTask(ElementTask task) async {
+    await _repository.updateTask(task);
+    await _refresh();
+  }
+
+  Future<void> deleteTask(String id) async {
+    await _repository.deleteTask(id);
+    await _refresh();
+  }
+
+  Future<void> toggleTaskStatus(String id) async {
+    final tasks = state.valueOrNull ?? await _repository.fetchTasks();
+    final taskIndex = tasks.indexWhere((task) => task.id == id);
+    if (taskIndex == -1) {
+      return;
     }
+
+    final toggledTask = tasks[taskIndex].copyWith(
+      isPending: !tasks[taskIndex].isPending,
+    );
+    await _repository.updateTask(toggledTask);
+    await _refresh();
   }
 }

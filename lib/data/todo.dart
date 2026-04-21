@@ -51,88 +51,10 @@ final Map<String, String> categoryImageMap = {
   'Home': 'assets/Home.jpg',
   'Personal': 'assets/Personal.jpg',
   'Career': 'assets/Career.jpg',
-  'Self Development': 'assets/Self_Development.jpg',
+  'Self': 'assets/Self_Development.jpg',
   'Leisure': 'assets/Leisure.jpg',
   'Fun': 'assets/Fun.jpg',
 };
-
-var dummyData = [
-  ElementTask(
-    isPending: true,
-    name: 'Finish project proposal',
-    urgencyLevel: UrgencyLevel.urgentImportant.value,
-    color: Color(0xFFFF0000),
-    startTime: DateTime.now().subtract(Duration(hours: 2)),
-    absoluteDeadline: DateTime.now().add(Duration(hours: 3)),
-    category: Category.office.value,
-    desireDeadline: DateTime.now().add(Duration(days: 1)),
-  ),
-
-  ElementTask(
-    isPending: true,
-    name: 'Pay electricity bill',
-    urgencyLevel: UrgencyLevel.notImportantUrgent.value,
-    category: Category.finance.value,
-    color: Color.fromARGB(255, 247, 104, 104),
-    startTime: DateTime.now(),
-    absoluteDeadline: DateTime.now().add(Duration(hours: 5)),
-    desireDeadline: DateTime.now().add(Duration(days: 2)),
-  ),
-
-  ElementTask(
-    name: 'Water the plants',
-    urgencyLevel: UrgencyLevel.urgentImportant.value,
-    color: Color(0xFFFF0000),
-    isPending: true,
-    startTime: DateTime.now(),
-    absoluteDeadline: DateTime.now().add(Duration(hours: 2)),
-    category: Category.home.value,
-    desireDeadline: DateTime.now().add(Duration(days: 1)),
-  ),
-
-  ElementTask(
-    name: 'Return online order',
-    urgencyLevel: UrgencyLevel.urgentImportant.value,
-    color: Color(0xFFFF0000),
-    isPending: true,
-    startTime: DateTime.now().subtract(Duration(hours: 2)),
-    absoluteDeadline: DateTime.now().add(Duration(hours: 6)),
-    category: Category.personal.value,
-    desireDeadline: DateTime.now().add(Duration(days: 1)),
-  ),
-
-  ElementTask(
-    name: 'Update LinkedIn profile',
-    urgencyLevel: UrgencyLevel.notUrgentImportant.value,
-    color: Color(0xFFFF0000),
-    isPending: true,
-    startTime: DateTime.now().subtract(Duration(days: 1)),
-    absoluteDeadline: DateTime.now().add(Duration(days: 1)),
-    category: Category.career.value,
-    desireDeadline: DateTime.now().add(Duration(days: 2)),
-  ),
-
-  ElementTask(
-    name: 'Organize photo gallery',
-    urgencyLevel: UrgencyLevel.notImportantNotUrgent.value,
-    color: Color(0xFFFF0000),
-    isPending: true,
-    startTime: DateTime.now().add(Duration(days: 1)),
-    absoluteDeadline: DateTime.now().add(Duration(days: 5)),
-    category: Category.self.value,
-    desireDeadline: DateTime.now().add(Duration(days: 5)),
-  ),
-  ElementTask(
-    name: 'Try a new game',
-    urgencyLevel: UrgencyLevel.notImportantNotUrgent.value,
-    color: Color(0xFFFF0000),
-    isPending: false,
-    startTime: DateTime.now(),
-    absoluteDeadline: DateTime.now().add(Duration(days: 3)),
-    category: Category.fun.value,
-    desireDeadline: DateTime.now().add(Duration(days: 4)),
-  ),
-];
 
 class ElementTask {
   final String id;
@@ -146,6 +68,7 @@ class ElementTask {
   final DateTime desireDeadline;
 
   ElementTask({
+    String? id,
     required this.isPending,
     required this.urgencyLevel,
     required this.category,
@@ -154,5 +77,57 @@ class ElementTask {
     required this.startTime,
     required this.absoluteDeadline,
     required this.desireDeadline,
-  }) : id = uuid.v4(); // Generate a unique ID for each task
+  }) : id = id ?? uuid.v4();
+
+  ElementTask copyWith({
+    String? id,
+    bool? isPending,
+    String? urgencyLevel,
+    String? category,
+    String? name,
+    DateTime? startTime,
+    Color? color,
+    DateTime? absoluteDeadline,
+    DateTime? desireDeadline,
+  }) {
+    return ElementTask(
+      id: id ?? this.id,
+      isPending: isPending ?? this.isPending,
+      urgencyLevel: urgencyLevel ?? this.urgencyLevel,
+      category: category ?? this.category,
+      name: name ?? this.name,
+      color: color ?? this.color,
+      startTime: startTime ?? this.startTime,
+      absoluteDeadline: absoluteDeadline ?? this.absoluteDeadline,
+      desireDeadline: desireDeadline ?? this.desireDeadline,
+    );
+  }
+
+  Map<String, Object?> toMap() {
+    return {
+      'id': id,
+      'is_pending': isPending ? 1 : 0,
+      'urgency_level': urgencyLevel,
+      'category': category,
+      'name': name,
+      'color': color.value,
+      'start_time': startTime.toIso8601String(),
+      'absolute_deadline': absoluteDeadline.toIso8601String(),
+      'desire_deadline': desireDeadline.toIso8601String(),
+    };
+  }
+
+  factory ElementTask.fromMap(Map<String, Object?> map) {
+    return ElementTask(
+      id: map['id']! as String,
+      isPending: (map['is_pending'] as num).toInt() == 1,
+      urgencyLevel: map['urgency_level']! as String,
+      category: map['category']! as String,
+      name: map['name']! as String,
+      color: Color((map['color']! as num).toInt()),
+      startTime: DateTime.parse(map['start_time']! as String),
+      absoluteDeadline: DateTime.parse(map['absolute_deadline']! as String),
+      desireDeadline: DateTime.parse(map['desire_deadline']! as String),
+    );
+  }
 }

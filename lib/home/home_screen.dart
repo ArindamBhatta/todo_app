@@ -1,33 +1,47 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:todo/common/scrollable_tab_bar.dart';
 import 'package:todo/data/todo.dart';
 import 'package:todo/home/add_task_form.dart';
-import 'package:todo/home/details_page.dart';
 import 'package:animations/animations.dart';
 import 'package:todo/logic/todo_manager.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<StatefulWidget> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen>
+class _HomeScreenState extends ConsumerState<HomeScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final ContainerTransitionType _transitionType = ContainerTransitionType.fade;
 
+  Future<void> _addTaskToList(ElementTask newTask) async {
+    await ref.read(taskListProvider.notifier).addTask(newTask);
+  }
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: dummyData.length, vsync: this);
+    _tabController = TabController(
+      length: UrgencyLevel.values.length,
+      vsync: this,
+    );
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final taskProvider = context.watch<TaskProvider>();
+    final tasksAsyncValue = ref.watch(taskListProvider);
+    final urgencyLevels =
+        UrgencyLevel.values.map((level) => level.value).toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -39,43 +53,82 @@ class _HomeScreenState extends State<HomeScreen>
         child: Column(
           children: [
             ScrollableTabBar(
-              menuOptions:
-                  UrgencyLevel.values.map((label) => label.value).toList(),
+              menuOptions: urgencyLevels,
               tabController: _tabController,
             ),
             Expanded(
               child: TabBarView(
                 controller: _tabController,
                 children:
-                    dummyData.map((task) {
-                      return Text(task.name);
+                    urgencyLevels.map((urgency) {
+                      return tasksAsyncValue.when(
+                        data: (tasks) {
+                          final tasksForUrgency =
+                              tasks
+                                  .where((task) => task.urgencyLevel == urgency)
+                                  .toList();
+
+                          if (tasksForUrgency.isEmpty) {
+                            return const Center(child: Text('No tasks yet'));
+                          }
+
+                          return ListView.builder(
+                            itemCount: tasksForUrgency.length,
+                            itemBuilder: (context, index) {
+                              final task = tasksForUrgency[index];
+                              final categoryImagePath =
+                                  categoryImageMap[task.category] ??
+                                  'assets/Office.jpg';
+
+                              return ListTile(
+                                title: Text(task.name),
+                                subtitle: Text(task.category),
+                                leading: CircleAvatar(
+                                  backgroundImage: AssetImage(
+                                    categoryImagePath,
+                                  ),
+                                ),
+                                trailing: Icon(getIconData(task.urgencyLevel)),
+                              );
+                            },
+                          );
+                        },
+                        loading:
+                            () => const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                        error:
+                            (error, _) => Center(
+                              child: Text('Failed to load tasks: $error'),
+                            ),
+                      );
                     }).toList(),
               ),
             ),
           ],
         ),
       ),
-      // floatingActionButton: OpenContainer(
-      //   transitionDuration: Duration(milliseconds: 900),
-      //   transitionType: _transitionType,
-      //   openBuilder: (context, action) {
-      //     return AddTaskForm(onAdd: _addTaskToList);
-      //   },
-      //   closedElevation: 6,
-      //   closedShape: RoundedRectangleBorder(
-      //     borderRadius: BorderRadius.circular(50),
-      //   ),
-      //   closedColor: Colors.teal,
-      //   openColor: Colors.white,
+      floatingActionButton: OpenContainer(
+        transitionDuration: Duration(milliseconds: 900),
+        transitionType: _transitionType,
+        openBuilder: (context, action) {
+          return AddTaskForm(onAdd: _addTaskToList);
+        },
+        closedElevation: 6,
+        closedShape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(50),
+        ),
+        closedColor: Colors.teal,
+        openColor: Colors.white,
 
-      //   closedBuilder: (context, action) {
-      //     return FloatingActionButton(
-      //       backgroundColor: Colors.teal,
-      //       onPressed: null,
-      //       child: const Icon(Icons.add, size: 30, color: Colors.white),
-      //     );
-      //   },
-      // ),
+        closedBuilder: (context, action) {
+          return FloatingActionButton(
+            backgroundColor: Colors.teal,
+            onPressed: action,
+            child: const Icon(Icons.add, size: 30, color: Colors.white),
+          );
+        },
+      ),
     );
   }
 }
