@@ -72,23 +72,70 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                             return const Center(child: Text('No tasks yet'));
                           }
 
-                          return ListView.builder(
+                          return GridView.builder(
+                            padding: const EdgeInsets.all(8),
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  crossAxisSpacing: 10,
+                                  mainAxisSpacing: 10,
+                                  childAspectRatio: 1.15,
+                                ),
                             itemCount: tasksForUrgency.length,
                             itemBuilder: (context, index) {
                               final task = tasksForUrgency[index];
                               final categoryImagePath =
                                   categoryImageMap[task.category] ??
                                   'assets/Office.jpg';
-
-                              return ListTile(
-                                title: Text(task.name),
-                                subtitle: Text(task.category),
-                                leading: CircleAvatar(
-                                  backgroundImage: AssetImage(
-                                    categoryImagePath,
+                              return Card(
+                                clipBehavior: Clip.antiAlias,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(10),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        child: ClipRRect(
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                          child: Image.asset(
+                                            categoryImagePath,
+                                            width: double.infinity,
+                                            fit: BoxFit.cover,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        task.name,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style:
+                                            Theme.of(
+                                              context,
+                                            ).textTheme.titleSmall,
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              task.category,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          Icon(
+                                            getIconData(task.urgencyLevel),
+                                            size: 18,
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                trailing: Icon(getIconData(task.urgencyLevel)),
                               );
                             },
                           );

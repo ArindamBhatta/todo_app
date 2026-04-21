@@ -17,13 +17,36 @@ class TaskPage extends ConsumerWidget {
             return const Center(child: Text('No cached tasks yet'));
           }
 
-          return ListView.builder(
+          return GridView.builder(
+            padding: const EdgeInsets.all(12),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 1.2,
+            ),
             itemCount: tasks.length,
             itemBuilder: (context, index) {
               final task = tasks[index];
-              return ListTile(
-                title: Text(task.name),
-                subtitle: Text(task.urgencyLevel),
+              return Card(
+                elevation: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        task.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(task.urgencyLevel),
+                    ],
+                  ),
+                ),
               );
             },
           );
