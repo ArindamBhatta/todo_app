@@ -430,101 +430,104 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                     )
                   else
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      physics: const BouncingScrollPhysics(),
-                      child: Row(
-                        children: inProgressTasks.map((task) {
-                          final style = getCategoryStyle(task.category);
-                          
-                          // Calculate time elapsed ratio
-                          final totalDuration = task.absoluteDeadline.difference(task.startTime).inMinutes;
-                          final elapsed = DateTime.now().difference(task.startTime).inMinutes;
-                          double progress = 0.5;
-                          if (totalDuration > 0) {
-                            progress = (elapsed / totalDuration).clamp(0.1, 0.9);
-                          }
-
-                          return GestureDetector(
-                            onTap: () => _showTaskDetailsDialog(context, task),
-                            child: Container(
-                              width: 200,
-                              height: 130,
-                              margin: const EdgeInsets.only(right: 16),
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: style.backgroundColor,
-                                borderRadius: BorderRadius.circular(20),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: style.progressColor.withValues(alpha: 0.05),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          style.label,
-                                          style: const TextStyle(
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w600,
-                                            color: Color(0xFF64748B),
-                                          ),
-                                        ),
-                                      ),
-                                      Container(
-                                        padding: const EdgeInsets.all(6),
-                                        decoration: const BoxDecoration(
-                                          color: Colors.white,
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Icon(
-                                          style.icon,
-                                          size: 14,
-                                          color: style.iconColor,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Expanded(
-                                    child: Text(
-                                      task.name,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFF0F172A),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  // Progress Bar
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(4),
-                                    child: LinearProgressIndicator(
-                                      value: progress,
-                                      minHeight: 5,
-                                      backgroundColor: Colors.white,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        style.progressColor,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        }).toList(),
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                        childAspectRatio: 1.4,
                       ),
+                      itemCount: inProgressTasks.length,
+                      itemBuilder: (context, index) {
+                        final task = inProgressTasks[index];
+                        final style = getCategoryStyle(task.category);
+                        
+                        // Calculate time elapsed ratio
+                        final totalDuration = task.absoluteDeadline.difference(task.startTime).inMinutes;
+                        final elapsed = DateTime.now().difference(task.startTime).inMinutes;
+                        double progress = 0.5;
+                        if (totalDuration > 0) {
+                          progress = (elapsed / totalDuration).clamp(0.1, 0.9);
+                        }
+
+                        return GestureDetector(
+                          onTap: () => _showTaskDetailsDialog(context, task),
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: style.backgroundColor,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: style.progressColor.withValues(alpha: 0.05),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        style.label,
+                                        style: const TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFF64748B),
+                                        ),
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: const BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        style.icon,
+                                        size: 12,
+                                        color: style.iconColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                Expanded(
+                                  child: Text(
+                                    task.name,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF0F172A),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                // Progress Bar
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(4),
+                                  child: LinearProgressIndicator(
+                                    value: progress,
+                                    minHeight: 4,
+                                    backgroundColor: Colors.white,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      style.progressColor,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   const SizedBox(height: 28),
 
