@@ -21,7 +21,7 @@ class TodoDatabase {
 
     return openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE tasks(
@@ -36,6 +36,22 @@ class TodoDatabase {
             desire_deadline TEXT NOT NULL
           )
         ''');
+        await db.execute('''
+          CREATE TABLE app_settings(
+            key TEXT PRIMARY KEY,
+            value TEXT
+          )
+        ''');
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          await db.execute('''
+            CREATE TABLE app_settings(
+              key TEXT PRIMARY KEY,
+              value TEXT
+            )
+          ''');
+        }
       },
     );
   }

@@ -173,7 +173,7 @@ class _OnBoardingScreenState extends ConsumerState<OnBoardingScreen> {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF4F46E5).withOpacity(0.3),
+                      color: const Color(0xFF4F46E5).withValues(alpha: 0.3),
                       blurRadius: 16,
                       offset: const Offset(0, 8),
                     ),
@@ -181,18 +181,17 @@ class _OnBoardingScreenState extends ConsumerState<OnBoardingScreen> {
                 ),
                 child: ElevatedButton(
                   onPressed: () async {
+                    final navigator = Navigator.of(context);
                     await ref.read(onboardingProvider.notifier).completeOnboarding();
                     final isLoggedIn = ref.read(authProvider).value ?? false;
-                    if (mounted) {
-                      if (isLoggedIn) {
-                        Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(builder: (context) => const OnBoardingPage()),
-                        );
-                      } else {
-                        Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(builder: (context) => const LoginScreen()),
-                        );
-                      }
+                    if (isLoggedIn) {
+                      navigator.pushReplacement(
+                        MaterialPageRoute(builder: (context) => const OnBoardingPage()),
+                      );
+                    } else {
+                      navigator.pushReplacement(
+                        MaterialPageRoute(builder: (context) => const LoginScreen()),
+                      );
                     }
                   },
                   style: ElevatedButton.styleFrom(
@@ -221,7 +220,7 @@ class _OnBoardingScreenState extends ConsumerState<OnBoardingScreen> {
                           height: 34,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                           ),
                           child: const Icon(
                             Icons.arrow_forward_rounded,

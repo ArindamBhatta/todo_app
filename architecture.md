@@ -28,7 +28,7 @@ In Flutter’s MVVM terms, you can treat a **Riverpod Notifier as the ViewModel*
 - UI depends on providers/notifiers (and optionally domain/use-cases).
 - Providers depend on repositories.
 - Repositories depend on datasources/services.
-- Services depend on external APIs (SQLite, shared_preferences, etc.).
+- Services depend on external APIs (SQLite, etc.).
 - Avoid circular dependencies and cross-feature “reach-ins”.
 
 ---
