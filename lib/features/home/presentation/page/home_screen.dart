@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:todo/data/todo.dart';
-import 'package:todo/features/home/presentation/page/add_task_form.dart';
-import 'package:animations/animations.dart';
 import 'package:todo/features/home/presentation/logic/todo_manager.dart';
 import 'package:intl/intl.dart';
 
@@ -115,49 +113,69 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  final ContainerTransitionType _transitionType = ContainerTransitionType.fade;
-
-  Future<void> _addTaskToList(ElementTask newTask) async {
-    await ref.read(taskListProvider.notifier).addTask(newTask);
-  }
 
   void _showTaskDetailsDialog(BuildContext context, ElementTask task) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(task.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _detailRow(Icons.category, 'Category', task.category),
-            _detailRow(Icons.priority_high, 'Urgency', task.urgencyLevel),
-            _detailRow(Icons.access_time, 'Start Time', DateFormat('MMM d, yyyy h:mm a').format(task.startTime)),
-            _detailRow(Icons.alarm, 'Desired Deadline', DateFormat('MMM d, yyyy h:mm a').format(task.desireDeadline)),
-            _detailRow(Icons.dangerous, 'Absolute Deadline', DateFormat('MMM d, yyyy h:mm a').format(task.absoluteDeadline)),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              await ref.read(taskListProvider.notifier).deleteTask(task.id);
-              if (ctx.mounted) Navigator.pop(ctx);
-            },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-          FilledButton(
-            onPressed: () async {
-              await ref.read(taskListProvider.notifier).toggleTaskStatus(task.id);
-              if (ctx.mounted) Navigator.pop(ctx);
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF4F46E5),
+      builder:
+          (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
             ),
-            child: Text(task.isPending ? 'Complete' : 'Reopen'),
+            title: Text(
+              task.name,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _detailRow(Icons.category, 'Category', task.category),
+                _detailRow(Icons.priority_high, 'Urgency', task.urgencyLevel),
+                _detailRow(
+                  Icons.access_time,
+                  'Start Time',
+                  DateFormat('MMM d, yyyy h:mm a').format(task.startTime),
+                ),
+                _detailRow(
+                  Icons.alarm,
+                  'Desired Deadline',
+                  DateFormat('MMM d, yyyy h:mm a').format(task.desireDeadline),
+                ),
+                _detailRow(
+                  Icons.dangerous,
+                  'Absolute Deadline',
+                  DateFormat(
+                    'MMM d, yyyy h:mm a',
+                  ).format(task.absoluteDeadline),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () async {
+                  await ref.read(taskListProvider.notifier).deleteTask(task.id);
+                  if (ctx.mounted) Navigator.pop(ctx);
+                },
+                child: const Text(
+                  'Delete',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+              FilledButton(
+                onPressed: () async {
+                  await ref
+                      .read(taskListProvider.notifier)
+                      .toggleTaskStatus(task.id);
+                  if (ctx.mounted) Navigator.pop(ctx);
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF4F46E5),
+                ),
+                child: Text(task.isPending ? 'Complete' : 'Reopen'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -168,8 +186,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         children: [
           Icon(icon, size: 16, color: const Color(0xFF64748B)),
           const SizedBox(width: 8),
-          Text('$label: ', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF475569))),
-          Expanded(child: Text(value, style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A)))),
+          Text(
+            '$label: ',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+              color: Color(0xFF475569),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A)),
+            ),
+          ),
         ],
       ),
     );
@@ -180,7 +210,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final tasksAsyncValue = ref.watch(taskListProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC), // Ultra-clean premium slate background
+      backgroundColor: const Color(
+        0xFFF8FAFC,
+      ), // Ultra-clean premium slate background
       body: SafeArea(
         child: tasksAsyncValue.when(
           data: (tasks) {
@@ -188,14 +220,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             final completedTasks = tasks.where((t) => !t.isPending).length;
             final inProgressTasks = tasks.where((t) => t.isPending).toList();
 
-            final completionRate = totalTasks == 0 ? 0.0 : completedTasks / totalTasks;
+            final completionRate =
+                totalTasks == 0 ? 0.0 : completedTasks / totalTasks;
 
-            // Group tasks by category
-            final Map<String, List<ElementTask>> groupedTasks = {};
-            for (final t in tasks) {
-              groupedTasks.putIfAbsent(t.category, () => []).add(t);
-            }
-            final categories = groupedTasks.keys.toList();
+
 
             return SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
@@ -226,11 +254,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               width: 52,
                               height: 52,
                               fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => const Icon(
-                                Icons.person_rounded,
-                                color: Color(0xFF4F46E5),
-                                size: 28,
-                              ),
+                              errorBuilder:
+                                  (context, error, stackTrace) => const Icon(
+                                    Icons.person_rounded,
+                                    color: Color(0xFF4F46E5),
+                                    size: 28,
+                                  ),
                             ),
                           ),
                         ),
@@ -358,7 +387,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               height: 78,
                               child: CircularProgressIndicator(
                                 value: completionRate,
-                                backgroundColor: Colors.white.withValues(alpha: 0.2),
+                                backgroundColor: Colors.white.withValues(
+                                  alpha: 0.2,
+                                ),
                                 color: Colors.white,
                                 strokeWidth: 7,
                                 strokeCap: StrokeCap.round,
@@ -392,7 +423,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFEEF2F6),
                           borderRadius: BorderRadius.circular(8),
@@ -433,20 +467,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                        childAspectRatio: 1.4,
-                      ),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                            childAspectRatio: 1.4,
+                          ),
                       itemCount: inProgressTasks.length,
                       itemBuilder: (context, index) {
                         final task = inProgressTasks[index];
                         final style = getCategoryStyle(task.category);
-                        
+
                         // Calculate time elapsed ratio
-                        final totalDuration = task.absoluteDeadline.difference(task.startTime).inMinutes;
-                        final elapsed = DateTime.now().difference(task.startTime).inMinutes;
+                        final totalDuration =
+                            task.absoluteDeadline
+                                .difference(task.startTime)
+                                .inMinutes;
+                        final elapsed =
+                            DateTime.now().difference(task.startTime).inMinutes;
                         double progress = 0.5;
                         if (totalDuration > 0) {
                           progress = (elapsed / totalDuration).clamp(0.1, 0.9);
@@ -459,9 +498,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             decoration: BoxDecoration(
                               color: style.backgroundColor,
                               borderRadius: BorderRadius.circular(20),
+                              image: DecorationImage(
+                                image: AssetImage(
+                                  categoryImageMap[task.category] ?? 'assets/Personal.jpg',
+                                ),
+                                fit: BoxFit.cover,
+                                colorFilter: ColorFilter.mode(
+                                  Colors.black.withValues(alpha: 0.55),
+                                  BlendMode.darken,
+                                ),
+                              ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: style.progressColor.withValues(alpha: 0.05),
+                                  color: style.progressColor.withValues(
+                                    alpha: 0.05,
+                                  ),
                                   blurRadius: 10,
                                   offset: const Offset(0, 4),
                                 ),
@@ -471,7 +522,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Expanded(
                                       child: Text(
@@ -479,20 +531,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                         style: const TextStyle(
                                           fontSize: 10,
                                           fontWeight: FontWeight.w600,
-                                          color: Color(0xFF64748B),
+                                          color: Colors.white70,
                                         ),
                                       ),
                                     ),
                                     Container(
                                       padding: const EdgeInsets.all(6),
-                                      decoration: const BoxDecoration(
-                                        color: Colors.white,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withValues(alpha: 0.25),
                                         shape: BoxShape.circle,
                                       ),
                                       child: Icon(
                                         style.icon,
                                         size: 12,
-                                        color: style.iconColor,
+                                        color: Colors.white,
                                       ),
                                     ),
                                   ],
@@ -506,7 +558,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     style: const TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.bold,
-                                      color: Color(0xFF0F172A),
+                                      color: Colors.white,
                                     ),
                                   ),
                                 ),
@@ -517,7 +569,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   child: LinearProgressIndicator(
                                     value: progress,
                                     minHeight: 4,
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: Colors.white.withValues(alpha: 0.3),
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                       style.progressColor,
                                     ),
@@ -529,168 +581,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         );
                       },
                     ),
-                  const SizedBox(height: 28),
-
-                  // 4. Task Groups Section
-                  Row(
-                    children: [
-                      const Text(
-                        'Task Groups',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF0F172A),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEEF2F6),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          '${categories.length}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF5E42EB),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: categories.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
-                      final category = categories[index];
-                      final categoryTasks = groupedTasks[category] ?? [];
-                      final completedGroupTasks = categoryTasks.where((t) => !t.isPending).length;
-                      final totalGroupTasks = categoryTasks.length;
-                      final groupCompletionRate = totalGroupTasks == 0 ? 0.0 : completedGroupTasks / totalGroupTasks;
-
-                      final style = getCategoryStyle(category);
-
-                      return Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.02),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                          border: Border.all(color: const Color(0xFFF1F5F9)),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: style.backgroundColor.withValues(alpha: 0.5),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Icon(
-                                style.icon,
-                                size: 24,
-                                color: style.iconColor,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    style.label,
-                                    style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF0F172A),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '$totalGroupTasks Tasks',
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: Color(0xFF64748B),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                SizedBox(
-                                  width: 46,
-                                  height: 46,
-                                  child: CircularProgressIndicator(
-                                    value: groupCompletionRate,
-                                    backgroundColor: const Color(0xFFF1F5F9),
-                                    color: style.progressColor,
-                                    strokeWidth: 4,
-                                    strokeCap: StrokeCap.round,
-                                  ),
-                                ),
-                                Text(
-                                  '${(groupCompletionRate * 100).toInt()}%',
-                                  style: const TextStyle(
-                                    color: Color(0xFF0F172A),
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 10,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 24),
                 ],
               ),
             );
           },
-          loading: () => const Center(
-            child: CircularProgressIndicator(
-              color: Color(0xFF5E42EB),
-            ),
-          ),
-          error: (error, _) => Center(
-            child: Text('Failed to load tasks: $error'),
-          ),
+          loading:
+              () => const Center(
+                child: CircularProgressIndicator(color: Color(0xFF5E42EB)),
+              ),
+          error:
+              (error, _) => Center(child: Text('Failed to load tasks: $error')),
         ),
-      ),
-      floatingActionButton: OpenContainer(
-        transitionDuration: const Duration(milliseconds: 600),
-        transitionType: _transitionType,
-        openBuilder: (context, action) {
-          return AddTaskForm(onAdd: _addTaskToList);
-        },
-        closedElevation: 6,
-        closedShape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(50),
-        ),
-        closedColor: const Color(0xFF5E42EB),
-        openColor: Colors.white,
-        closedBuilder: (context, action) {
-          return FloatingActionButton(
-            backgroundColor: const Color(0xFF5E42EB),
-            onPressed: action,
-            child: const Icon(Icons.add, size: 30, color: Colors.white),
-          );
-        },
       ),
     );
   }
