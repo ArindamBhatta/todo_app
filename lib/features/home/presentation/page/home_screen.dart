@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:todo/data/todo.dart';
 import 'package:todo/features/home/presentation/logic/todo_manager.dart';
 import 'package:intl/intl.dart';
+import 'package:awesome_notifications/awesome_notifications.dart';
 
 class CategoryStyle {
   final Color backgroundColor;
@@ -185,6 +186,47 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _checkNotificationPermissions();
+  }
+
+  void _checkNotificationPermissions() {
+    AwesomeNotifications().isNotificationAllowed().then((isAllowed) {
+      if (!mounted) return;
+      if (!isAllowed) {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Enable Notifications'),
+            content: const Text(
+              'To get alerts for Urgent and Important tasks, please allow notifications in settings.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Later'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  AwesomeNotifications()
+                      .requestPermissionToSendNotifications()
+                      .then((allowed) {
+                    if (!allowed) {
+                      AwesomeNotifications().showNotificationConfigPage();
+                    }
+                  });
+                },
+                child: const Text('Allow'),
+              ),
+            ],
+          ),
+        );
+      }
+    });
+  }
 
   void _showTaskDetailsDialog(BuildContext context, ElementTask task) {
     showDialog(
@@ -366,7 +408,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         alignment: Alignment.topRight,
                         children: [
                           IconButton(
-                            onPressed: () {},
+                            onPressed: () async {
+                              final isAllowed = await AwesomeNotifications().isNotificationAllowed();
+                              if (!isAllowed) {
+                                await AwesomeNotifications().requestPermissionToSendNotifications().then((allowed) {
+                                  if (!allowed) {
+                                    AwesomeNotifications().showNotificationConfigPage();
+                                  }
+                                });
+                              } else {
+                                await AwesomeNotifications().createNotification(
+                                  content: NotificationContent(
+                                    id: 9999,
+                                    channelKey: 'urgent_important_channel',
+                                    title: '🔔 Notification System Active!',
+                                    body: 'Local notifications are active and ready for Urgent Important tasks.',
+                                    notificationLayout: NotificationLayout.Default,
+                                  ),
+                                );
+                              }
+                            },
                             icon: const Icon(
                               Icons.notifications_rounded,
                               color: Color(0xFF0F172A),
