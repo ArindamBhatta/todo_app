@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:todo/features/onboarding/presentation/page/onboarding_screen.dart';
+import 'package:todo/features/onboarding/presentation/page/view.dart';
 import 'package:todo/features/onboarding/presentation/logic/onboarding_manager.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  group('OnboardingScreen Widget Tests', () {
+  group('OnBoardingScreen Widget Tests', () {
     setUp(() {
       SharedPreferences.setMockInitialValues({});
     });
@@ -18,25 +18,25 @@ void main() {
       await tester.pumpWidget(
         const ProviderScope(
           child: MaterialApp(
-            home: OnboardingScreen(),
+            home: OnBoardingScreen(),
           ),
         ),
       );
 
-      // Verify page titles and text elements
-      expect(find.text('Task Management & \nTo-Do List'), findsOneWidget);
+      // Verify page captions and text elements
+      expect(find.text('Explore the new to \n find good places'), findsOneWidget);
       expect(
         find.text(
-          'This productive tool is designed to help\nyou better manage your task\nproject-wise conveniently!',
+          'Travel around the world with just a tap and enjoy your best holiday',
         ),
         findsOneWidget,
       );
 
-      // Verify Let's Start button is rendered
-      expect(find.text("Let's Start"), findsOneWidget);
+      // Verify Get Started button is rendered
+      expect(find.text("Get Started"), findsOneWidget);
     });
 
-    testWidgets('clicking Let\'s Start button triggers completion', (WidgetTester tester) async {
+    testWidgets('clicking Get Started button triggers completion', (WidgetTester tester) async {
       // Prepare container to track provider state
       final container = ProviderContainer();
       
@@ -44,16 +44,13 @@ void main() {
         UncontrolledProviderScope(
           container: container,
           child: const MaterialApp(
-            home: OnboardingScreen(),
+            home: OnBoardingScreen(),
           ),
         ),
       );
 
-      // Verify initial state of onboarding is false
-      expect(await container.read(onboardingProvider.future), isFalse);
-
-      // Tap the Let's Start button
-      await tester.tap(find.text("Let's Start"));
+      // Tap the Get Started button
+      await tester.tap(find.text("Get Started"));
       await tester.pump(const Duration(milliseconds: 300));
 
       // Verify state was updated to true

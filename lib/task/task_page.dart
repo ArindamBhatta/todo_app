@@ -18,37 +18,60 @@ class _TaskPageState extends ConsumerState<TaskPage> {
   void _showTaskDetailsDialog(BuildContext context, ElementTask task) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(task.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _detailRow(Icons.category, 'Category', task.category),
-            _detailRow(Icons.priority_high, 'Urgency', task.urgencyLevel),
-            _detailRow(Icons.access_time, 'Start Time', DateFormat('MMM d, yyyy h:mm a').format(task.startTime)),
-            _detailRow(Icons.alarm, 'Desired Deadline', DateFormat('MMM d, yyyy h:mm a').format(task.desireDeadline)),
-            _detailRow(Icons.dangerous, 'Absolute Deadline', DateFormat('MMM d, yyyy h:mm a').format(task.absoluteDeadline)),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              await ref.read(taskListProvider.notifier).deleteTask(task.id);
-              if (ctx.mounted) Navigator.pop(ctx);
-            },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx),
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF4F46E5),
+      builder:
+          (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
             ),
-            child: const Text('Close'),
+            title: Text(
+              task.name,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _detailRow(Icons.category, 'Category', task.category),
+                _detailRow(Icons.priority_high, 'Urgency', task.urgencyLevel),
+                _detailRow(
+                  Icons.access_time,
+                  'Start Time',
+                  DateFormat('MMM d, yyyy h:mm a').format(task.startTime),
+                ),
+                _detailRow(
+                  Icons.alarm,
+                  'Desired Deadline',
+                  DateFormat('MMM d, yyyy h:mm a').format(task.desireDeadline),
+                ),
+                _detailRow(
+                  Icons.dangerous,
+                  'Absolute Deadline',
+                  DateFormat(
+                    'MMM d, yyyy h:mm a',
+                  ).format(task.absoluteDeadline),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () async {
+                  await ref.read(taskListProvider.notifier).deleteTask(task.id);
+                  if (ctx.mounted) Navigator.pop(ctx);
+                },
+                child: const Text(
+                  'Delete',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF4F46E5),
+                ),
+                child: const Text('Close'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -59,8 +82,20 @@ class _TaskPageState extends ConsumerState<TaskPage> {
         children: [
           Icon(icon, size: 16, color: const Color(0xFF64748B)),
           const SizedBox(width: 8),
-          Text('$label: ', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF475569))),
-          Expanded(child: Text(value, style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A)))),
+          Text(
+            '$label: ',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+              color: Color(0xFF475569),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A)),
+            ),
+          ),
         ],
       ),
     );
@@ -115,30 +150,37 @@ class _TaskPageState extends ConsumerState<TaskPage> {
                   ),
                   const SizedBox(height: 8),
                   Row(
-                    children: ['All', 'Active', 'Completed'].map((status) {
-                      final isSelected = _selectedStatusFilter == status;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8.0),
-                        child: ChoiceChip(
-                          label: Text(status),
-                          selected: isSelected,
-                          onSelected: (selected) {
-                            if (selected) {
-                              setModalState(() {
-                                _selectedStatusFilter = status;
-                              });
-                              setState(() {});
-                            }
-                          },
-                          selectedColor: const Color(0xFFE0E7FF),
-                          checkmarkColor: const Color(0xFF4F46E5),
-                          labelStyle: TextStyle(
-                            color: isSelected ? const Color(0xFF4F46E5) : const Color(0xFF475569),
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                          ),
-                        ),
-                      );
-                    }).toList(),
+                    children:
+                        ['All', 'Active', 'Completed'].map((status) {
+                          final isSelected = _selectedStatusFilter == status;
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8.0),
+                            child: ChoiceChip(
+                              label: Text(status),
+                              selected: isSelected,
+                              onSelected: (selected) {
+                                if (selected) {
+                                  setModalState(() {
+                                    _selectedStatusFilter = status;
+                                  });
+                                  setState(() {});
+                                }
+                              },
+                              selectedColor: const Color(0xFFE0E7FF),
+                              checkmarkColor: const Color(0xFF4F46E5),
+                              labelStyle: TextStyle(
+                                color:
+                                    isSelected
+                                        ? const Color(0xFF4F46E5)
+                                        : const Color(0xFF475569),
+                                fontWeight:
+                                    isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                              ),
+                            ),
+                          );
+                        }).toList(),
                   ),
                   const SizedBox(height: 16),
                   const Text(
@@ -153,27 +195,37 @@ class _TaskPageState extends ConsumerState<TaskPage> {
                   Wrap(
                     spacing: 8,
                     runSpacing: 4,
-                    children: ['All', ...Category.values.map((c) => c.value)].map<Widget>((cat) {
-                      final isSelected = _selectedCategoryFilter == cat;
-                      return ChoiceChip(
-                        label: Text(cat),
-                        selected: isSelected,
-                        onSelected: (selected) {
-                          if (selected) {
-                            setModalState(() {
-                              _selectedCategoryFilter = cat;
-                            });
-                            setState(() {});
-                          }
-                        },
-                        selectedColor: const Color(0xFFE0E7FF),
-                        checkmarkColor: const Color(0xFF4F46E5),
-                        labelStyle: TextStyle(
-                          color: isSelected ? const Color(0xFF4F46E5) : const Color(0xFF475569),
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        ),
-                      );
-                    }).toList(),
+                    children:
+                        [
+                          'All',
+                          ...Category.values.map((c) => c.value),
+                        ].map<Widget>((cat) {
+                          final isSelected = _selectedCategoryFilter == cat;
+                          return ChoiceChip(
+                            label: Text(cat),
+                            selected: isSelected,
+                            onSelected: (selected) {
+                              if (selected) {
+                                setModalState(() {
+                                  _selectedCategoryFilter = cat;
+                                });
+                                setState(() {});
+                              }
+                            },
+                            selectedColor: const Color(0xFFE0E7FF),
+                            checkmarkColor: const Color(0xFF4F46E5),
+                            labelStyle: TextStyle(
+                              color:
+                                  isSelected
+                                      ? const Color(0xFF4F46E5)
+                                      : const Color(0xFF475569),
+                              fontWeight:
+                                  isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                            ),
+                          );
+                        }).toList(),
                   ),
                   const SizedBox(height: 24),
                   SizedBox(
@@ -187,7 +239,10 @@ class _TaskPageState extends ConsumerState<TaskPage> {
                         ),
                       ),
                       onPressed: () => Navigator.pop(context),
-                      child: const Text('Apply Filters', style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        'Apply Filters',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                 ],
@@ -220,26 +275,34 @@ class _TaskPageState extends ConsumerState<TaskPage> {
       ),
       body: tasksAsync.when(
         data: (tasks) {
-          final filteredTasks = tasks.where((task) {
-            final matchesCategory = _selectedCategoryFilter == 'All' || task.category == _selectedCategoryFilter;
-            bool matchesStatus = true;
-            if (_selectedStatusFilter == 'Active') {
-              matchesStatus = task.isPending;
-            } else if (_selectedStatusFilter == 'Completed') {
-              matchesStatus = !task.isPending;
-            }
-            return matchesCategory && matchesStatus;
-          }).toList();
+          final filteredTasks =
+              tasks.where((task) {
+                final matchesCategory =
+                    _selectedCategoryFilter == 'All' ||
+                    task.category == _selectedCategoryFilter;
+                bool matchesStatus = true;
+                if (_selectedStatusFilter == 'Active') {
+                  matchesStatus = task.isPending;
+                } else if (_selectedStatusFilter == 'Completed') {
+                  matchesStatus = !task.isPending;
+                }
+                return matchesCategory && matchesStatus;
+              }).toList();
 
           if (filteredTasks.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.inbox_outlined, size: 48, color: Colors.grey.shade400),
+                  Icon(
+                    Icons.inbox_outlined,
+                    size: 48,
+                    color: Colors.grey.shade400,
+                  ),
                   const SizedBox(height: 8),
                   Text(
-                    _selectedCategoryFilter != 'All' || _selectedStatusFilter != 'All'
+                    _selectedCategoryFilter != 'All' ||
+                            _selectedStatusFilter != 'All'
                         ? 'No tasks match filters'
                         : 'No tasks yet',
                     style: TextStyle(color: Colors.grey.shade600),
@@ -307,12 +370,14 @@ class _TaskPageState extends ConsumerState<TaskPage> {
                                   style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
-                                    color: isCompleted
-                                        ? const Color(0xFF94A3B8)
-                                        : const Color(0xFF0F172A),
-                                    decoration: isCompleted
-                                        ? TextDecoration.lineThrough
-                                        : TextDecoration.none,
+                                    color:
+                                        isCompleted
+                                            ? const Color(0xFF94A3B8)
+                                            : const Color(0xFF0F172A),
+                                    decoration:
+                                        isCompleted
+                                            ? TextDecoration.lineThrough
+                                            : TextDecoration.none,
                                   ),
                                 ),
                               ],
@@ -334,7 +399,8 @@ class _TaskPageState extends ConsumerState<TaskPage> {
                           right: 0,
                           child: InkWell(
                             onTap: () {
-                              ref.read(taskListProvider.notifier)
+                              ref
+                                  .read(taskListProvider.notifier)
                                   .toggleTaskStatus(task.id);
                             },
                             borderRadius: BorderRadius.circular(20),
@@ -343,23 +409,26 @@ class _TaskPageState extends ConsumerState<TaskPage> {
                               height: 24,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: isCompleted
-                                    ? const Color(0xFF4F46E5)
-                                    : Colors.white.withOpacity(0.9),
+                                color:
+                                    isCompleted
+                                        ? const Color(0xFF4F46E5)
+                                        : Colors.white.withOpacity(0.9),
                                 border: Border.all(
-                                  color: isCompleted
-                                      ? const Color(0xFF4F46E5)
-                                      : const Color(0xFFCBD5E1),
+                                  color:
+                                      isCompleted
+                                          ? const Color(0xFF4F46E5)
+                                          : const Color(0xFFCBD5E1),
                                   width: 2,
                                 ),
                               ),
-                              child: isCompleted
-                                  ? const Icon(
-                                      Icons.check,
-                                      size: 12,
-                                      color: Colors.white,
-                                    )
-                                  : null,
+                              child:
+                                  isCompleted
+                                      ? const Icon(
+                                        Icons.check,
+                                        size: 12,
+                                        color: Colors.white,
+                                      )
+                                      : null,
                             ),
                           ),
                         ),

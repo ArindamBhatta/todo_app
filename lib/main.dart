@@ -4,8 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:todo/task/task_page.dart';
 import 'package:todo/features/home/presentation/page/home_screen.dart';
-import 'package:todo/features/onboarding/presentation/logic/onboarding_manager.dart';
-import 'package:todo/features/onboarding/presentation/page/onboarding_screen.dart';
+import 'package:todo/features/splash/presentation/page/splash_screen.dart';
 
 main() {
   runApp(const ProviderScope(child: TodoApp()));
@@ -17,24 +16,11 @@ class TodoApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final textTheme = Theme.of(context).textTheme;
-    final onboardingCompleted = ref.watch(onboardingProvider);
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: "Todo App",
-      home: onboardingCompleted.when(
-        data: (completed) => completed ? const OnBoardingPage() : const OnboardingScreen(),
-        loading: () => const Scaffold(
-          body: Center(
-            child: CircularProgressIndicator(),
-          ),
-        ),
-        error: (err, stack) => Scaffold(
-          body: Center(
-            child: Text('Error loading onboarding state: $err'),
-          ),
-        ),
-      ),
+      home: const SplashScreen(),
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
@@ -89,20 +75,21 @@ class _OnBoardingPageState extends State<OnBoardingPage>
           buttonBackgroundColor: const Color(0xFF4F46E5), // Indigo 600
           height: 60,
           index: currentPageIndex,
-          items: pathOfIcons.asMap().entries.map((entry) {
-            final idx = entry.key;
-            final iconPath = entry.value;
-            final isActive = idx == currentPageIndex;
-            return Padding(
-              padding: const EdgeInsets.all(8),
-              child: Image.asset(
-                iconPath,
-                width: 20,
-                height: 20,
-                color: isActive ? Colors.white : const Color(0xFF475569),
-              ),
-            );
-          }).toList(),
+          items:
+              pathOfIcons.asMap().entries.map((entry) {
+                final idx = entry.key;
+                final iconPath = entry.value;
+                final isActive = idx == currentPageIndex;
+                return Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Image.asset(
+                    iconPath,
+                    width: 20,
+                    height: 20,
+                    color: isActive ? Colors.white : const Color(0xFF475569),
+                  ),
+                );
+              }).toList(),
           onTap: (int index) {
             setState(() {
               currentPageIndex = index;

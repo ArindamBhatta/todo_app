@@ -1,12 +1,68 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../logic/onboarding_manager.dart';
+import 'package:todo/features/onboarding/presentation/logic/onboarding_manager.dart';
+import 'package:todo/features/onboarding/presentation/page/view.dart';
+import 'package:todo/features/auth/presentation/logic/auth_manager.dart';
+import 'package:todo/features/auth/presentation/pages/login_screen.dart';
+import 'package:todo/main.dart';
 
-class OnboardingScreen extends ConsumerWidget {
-  const OnboardingScreen({super.key});
+class SplashScreen extends ConsumerStatefulWidget {
+  const SplashScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends ConsumerState<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _initializeNavigation();
+  }
+
+  Future<void> _initializeNavigation() async {
+    try {
+      // Wait for a minimum of 2.5 seconds to display splash animation,
+      // and retrieve onboarding/auth states concurrently.
+      final results = await Future.wait([
+        Future.delayed(const Duration(milliseconds: 2500)),
+        ref.read(onboardingProvider.future),
+        ref.read(authProvider.future),
+      ]);
+
+      final bool onboardingCompleted = results[1] as bool;
+      final bool isLoggedIn = results[2] as bool;
+
+      if (!mounted) return;
+
+      if (!onboardingCompleted) {
+        // Navigate to Onboarding tutorial
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const OnBoardingScreen()),
+        );
+      } else if (!isLoggedIn) {
+        // Navigate to Login screen
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+      } else {
+        // Navigate to Home screen (OnBoardingPage tab wrapper)
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const OnBoardingPage()),
+        );
+      }
+    } catch (e) {
+      // Fallback navigation in case of error
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const OnBoardingScreen()),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
@@ -48,31 +104,18 @@ class OnboardingScreen extends ConsumerWidget {
           ),
 
           // Corner circles (Stylized mockup border design)
-          Positioned(
-            top: 36,
-            left: 24,
-            child: _CornerRing(),
-          ),
-          Positioned(
-            top: 36,
-            right: 24,
-            child: _CornerRing(),
-          ),
-          Positioned(
-            bottom: 36,
-            left: 24,
-            child: _CornerRing(),
-          ),
-          Positioned(
-            bottom: 36,
-            right: 24,
-            child: _CornerRing(),
-          ),
+          Positioned(top: 36, left: 24, child: _CornerRing()),
+          Positioned(top: 36, right: 24, child: _CornerRing()),
+          Positioned(bottom: 36, left: 24, child: _CornerRing()),
+          Positioned(bottom: 36, right: 24, child: _CornerRing()),
 
           // Foreground Content
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24.0,
+                vertical: 16.0,
+              ),
               child: Column(
                 children: [
                   const Spacer(flex: 2),
@@ -126,63 +169,13 @@ class OnboardingScreen extends ConsumerWidget {
 
                   const Spacer(flex: 2),
 
-                  // Let's Start button
-                  SizedBox(
-                    width: double.infinity,
+                  // Loading Indicator
+                  const SizedBox(
                     height: 56,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF5B3DE2).withOpacity(0.3),
-                            blurRadius: 16,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: ElevatedButton(
-                        onPressed: () {
-                          ref.read(onboardingProvider.notifier).completeOnboarding();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF5B3DE2), // Purple color
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                        ),
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            const Text(
-                              "Let's Start",
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                            Positioned(
-                              right: 0,
-                              child: Container(
-                                width: 34,
-                                height: 34,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.white.withOpacity(0.2),
-                                ),
-                                child: const Icon(
-                                  Icons.arrow_forward_rounded,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF5B3DE2), // Purple/Indigo color
+                        strokeWidth: 3,
                       ),
                     ),
                   ),
@@ -202,10 +195,7 @@ class _GlowBlob extends StatelessWidget {
   final double size;
   final Color color;
 
-  const _GlowBlob({
-    required this.size,
-    required this.color,
-  });
+  const _GlowBlob({required this.size, required this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -287,3 +277,4 @@ class _FloatingWidgetState extends State<_FloatingWidget>
     );
   }
 }
+

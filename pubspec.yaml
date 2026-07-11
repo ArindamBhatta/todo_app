@@ -29,6 +29,7 @@ dependencies:
   timezone: ^0.10.1
   awesome_notifications: ^0.10.1
   riverpod: ^2.6.1
+  dots_indicator: ^4.0.1
 
 dev_dependencies:
   flutter_test:
