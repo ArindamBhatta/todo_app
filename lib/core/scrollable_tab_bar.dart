@@ -25,8 +25,8 @@ class ScrollableTabBar extends StatefulWidget {
     this.tabHPadding = 5,
     this.labelVPadding = 5,
     this.adjustmentHeight = 1,
-    this.indicatorColor = Colors.teal,
-    this.unselectedLabelColor = Colors.black,
+    this.indicatorColor = const Color(0xFF4F46E5), // Indigo 600
+    this.unselectedLabelColor = const Color(0xFF64748B), // Slate 500
     this.labelColor = Colors.white,
     this.labelHPadding = 13,
   });

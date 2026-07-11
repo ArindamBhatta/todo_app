@@ -76,8 +76,7 @@ class _AddTaskFormState extends State<AddTaskForm> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Add Task'),
-        backgroundColor: Colors.tealAccent,
+        title: const Text('Add Task'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -104,12 +103,15 @@ class _AddTaskFormState extends State<AddTaskForm> {
                                   )
                                   .toList(),
                           onChanged: (val) => setState(() => title = val!),
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: "Urgency Level",
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                         ),
                       ),
-                      SizedBox(width: 16),
+                      const SizedBox(width: 16),
                       Expanded(
                         flex: 1,
                         child: DropdownButtonFormField<String>(
@@ -124,8 +126,11 @@ class _AddTaskFormState extends State<AddTaskForm> {
                                   )
                                   .toList(),
                           onChanged: (val) => setState(() => category = val!),
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: "Category",
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                         ),
                       ),
@@ -134,7 +139,12 @@ class _AddTaskFormState extends State<AddTaskForm> {
                   const SizedBox(height: 16),
                   //* Text Field
                   TextFormField(
-                    decoration: const InputDecoration(labelText: 'Task Name'),
+                    decoration: InputDecoration(
+                      labelText: 'Task Name',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                     onChanged: (val) => name = val,
                     validator:
                         (val) => val == null || val.isEmpty ? "Required" : null,
@@ -167,53 +177,64 @@ class _AddTaskFormState extends State<AddTaskForm> {
                               }),
                         ),
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
                   //* Color Picker
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: currentColor,
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: currentColor,
+                        foregroundColor: currentColor.computeLuminance() > 0.5 ? Colors.black : Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: () {
+                        pickerColor = currentColor;
+                        showDialog(
+                          context: context,
+                          builder: (context) {
+                            return AlertDialog(
+                              title: const Text('Pick a color!'),
+                              content: SingleChildScrollView(
+                                child: ColorPicker(
+                                  pickerColor: pickerColor,
+                                  onColorChanged: changeColor,
+                                ),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    setState(() => currentColor = pickerColor);
+                                    Navigator.of(context).pop();
+                                  },
+                                  child: const Text('Got it'),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      },
+                      icon: const Icon(Icons.color_lens_outlined),
+                      label: const Text('Choose Task Color', style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
-                    onPressed: () {
-                      pickerColor = currentColor;
-                      showDialog(
-                        context: context,
-                        builder: (context) {
-                          return AlertDialog(
-                            title: const Text('Pick a color!'),
-                            content: SingleChildScrollView(
-                              child: ColorPicker(
-                                pickerColor: pickerColor,
-                                onColorChanged: changeColor,
-                              ),
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  setState(() => currentColor = pickerColor);
-                                  Navigator.of(context).pop();
-                                },
-                                child: const Text('Got it'),
-                              ),
-                            ],
-                          );
-                        },
-                      );
-                    },
-                    child: const Text('Choose Task Color'),
                   ),
+                  const SizedBox(height: 16),
 
                   SizedBox(
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.teal,
-                        shape: BeveledRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                        backgroundColor: const Color(0xFF4F46E5), // Indigo 600
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text('Add Task'),
+                      child: const Text('Add Task', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                       onPressed: () async {
                         if (_formKey.currentState!.validate()) {
                           await widget.onAdd(
