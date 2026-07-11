@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:todo/data/todo.dart';
 import 'package:todo/data/todo_repository.dart';
+import 'package:awesome_notifications/awesome_notifications.dart';
 
 final todoRepositoryProvider = Provider<TodoRepository>((ref) {
   return TodoRepository();
@@ -89,6 +90,23 @@ class TaskListNotifier extends AsyncNotifier<List<ElementTask>> {
 
   Future<void> addTask(ElementTask task) async {
     await _repository.insertTask(task);
+    if (task.urgencyLevel == 'Urgent Important') {
+      try {
+        await AwesomeNotifications().createNotification(
+          content: NotificationContent(
+            id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
+            channelKey: 'urgent_important_channel',
+            title: '🚨 Urgent & Important Work!',
+            body: 'Task: "${task.name}" needs your immediate attention!',
+            notificationLayout: NotificationLayout.Default,
+            payload: {'taskId': task.id},
+          ),
+        );
+      } catch (e) {
+        // Fail-safe in testing or unsupported platforms
+        debugPrint('Failed to send notification: $e');
+      }
+    }
     await _refresh();
   }
 
