@@ -7,7 +7,6 @@ import 'package:todo/features/onboarding/presentation/page/widgets/scrollable_sc
 import 'package:todo/features/onboarding/presentation/logic/onboarding_manager.dart';
 import 'package:todo/features/auth/presentation/logic/auth_manager.dart';
 import 'package:todo/features/auth/presentation/pages/login_screen.dart';
-import 'package:todo/main.dart';
 
 class OnBoardingScreen extends ConsumerStatefulWidget {
   const OnBoardingScreen({super.key});
@@ -182,15 +181,19 @@ class _OnBoardingScreenState extends ConsumerState<OnBoardingScreen> {
                 child: ElevatedButton(
                   onPressed: () async {
                     final navigator = Navigator.of(context);
-                    await ref.read(onboardingProvider.notifier).completeOnboarding();
+                    await ref
+                        .read(onboardingProvider.notifier)
+                        .completeOnboarding();
                     final isLoggedIn = ref.read(authProvider).value ?? false;
                     if (isLoggedIn) {
                       navigator.pushReplacement(
-                        MaterialPageRoute(builder: (context) => const OnBoardingPage()),
+                        MaterialPageRoute(builder: (context) => Placeholder()),
                       );
                     } else {
                       navigator.pushReplacement(
-                        MaterialPageRoute(builder: (context) => const LoginScreen()),
+                        MaterialPageRoute(
+                          builder: (context) => const LoginScreen(),
+                        ),
                       );
                     }
                   },

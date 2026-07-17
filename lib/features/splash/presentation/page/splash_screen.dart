@@ -4,7 +4,6 @@ import 'package:todo/features/onboarding/presentation/logic/onboarding_manager.d
 import 'package:todo/features/onboarding/presentation/page/view.dart';
 import 'package:todo/features/auth/presentation/logic/auth_manager.dart';
 import 'package:todo/features/auth/presentation/pages/login_screen.dart';
-import 'package:todo/main.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -48,7 +47,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       } else {
         // Navigate to Home screen (OnBoardingPage tab wrapper)
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const OnBoardingPage()),
+          MaterialPageRoute(builder: (context) => const OnBoardingScreen()),
         );
       }
     } catch (e) {
@@ -277,4 +276,3 @@ class _FloatingWidgetState extends State<_FloatingWidget>
     );
   }
 }
-

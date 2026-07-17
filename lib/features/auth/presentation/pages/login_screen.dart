@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:todo/features/auth/presentation/logic/auth_manager.dart';
-import 'package:todo/main.dart'; // To navigate to OnBoardingPage (Main tab wrapper)
+import 'package:todo/features/onboarding/presentation/page/view.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -38,7 +38,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
       if (mounted) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const OnBoardingPage()),
+          MaterialPageRoute(builder: (context) => const OnBoardingScreen()),
         );
       }
     } catch (e) {
@@ -154,10 +154,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         decoration: InputDecoration(
                           hintText: 'hello@example.com',
                           hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
-                          prefixIcon: const Icon(Icons.mail_outline_rounded, color: Color(0xFF64748B)),
+                          prefixIcon: const Icon(
+                            Icons.mail_outline_rounded,
+                            color: Color(0xFF64748B),
+                          ),
                           filled: true,
                           fillColor: Colors.white,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 16,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide.none,
@@ -168,14 +173,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
-                            borderSide: const BorderSide(color: Color(0xFF4F46E5), width: 1.5),
+                            borderSide: const BorderSide(
+                              color: Color(0xFF4F46E5),
+                              width: 1.5,
+                            ),
                           ),
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter your email';
                           }
-                          if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                          if (!RegExp(
+                            r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                          ).hasMatch(value)) {
                             return 'Please enter a valid email address';
                           }
                           return null;
@@ -199,10 +209,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         decoration: InputDecoration(
                           hintText: '••••••••',
                           hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
-                          prefixIcon: const Icon(Icons.lock_outline_rounded, color: Color(0xFF64748B)),
+                          prefixIcon: const Icon(
+                            Icons.lock_outline_rounded,
+                            color: Color(0xFF64748B),
+                          ),
                           suffixIcon: IconButton(
                             icon: Icon(
-                              _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                              _obscurePassword
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
                               color: const Color(0xFF64748B),
                             ),
                             onPressed: () {
@@ -213,7 +228,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                           filled: true,
                           fillColor: Colors.white,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 16,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide.none,
@@ -224,7 +241,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
-                            borderSide: const BorderSide(color: Color(0xFF4F46E5), width: 1.5),
+                            borderSide: const BorderSide(
+                              color: Color(0xFF4F46E5),
+                              width: 1.5,
+                            ),
                           ),
                         ),
                         validator: (value) {
@@ -269,22 +289,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ),
                             elevation: 0,
                           ),
-                          child: _isLoading
-                              ? const SizedBox(
-                                  height: 24,
-                                  width: 24,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2.5,
+                          child:
+                              _isLoading
+                                  ? const SizedBox(
+                                    height: 24,
+                                    width: 24,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2.5,
+                                    ),
+                                  )
+                                  : const Text(
+                                    'Login',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
-                                )
-                              : const Text(
-                                  'Login',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -295,7 +316,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         children: [
                           const Text(
                             "Don't have an account? ",
-                            style: TextStyle(color: Color(0xFF64748B), fontSize: 14),
+                            style: TextStyle(
+                              color: Color(0xFF64748B),
+                              fontSize: 14,
+                            ),
                           ),
                           TextButton(
                             onPressed: () {},

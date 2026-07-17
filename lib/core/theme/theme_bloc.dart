@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:todo/core/theme/app_theme.dart';
 
 class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
-  var internalThemeMode = ThemeMode.system;
-
   ThemeBloc({required ThemeMode initialThemeMode})
     : super(ThemeState(initialThemeMode)) {
-    var currentMode = state.themeMode;
     on<ChangeTheme>((event, emit) {
       emit(ThemeState(event.themeMode));
     });
 
     on<ToggleTheme>((event, emit) {
-      currentMode = state.themeMode;
+      final currentMode = state.themeMode;
       emit(
         ThemeState(
           currentMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark,
@@ -36,4 +34,8 @@ class ThemeState {
   final ThemeMode themeMode;
 
   ThemeState(this.themeMode);
+
+  ThemeData get themeData {
+    return themeMode == ThemeMode.dark ? AppTheme.darkTheme : AppTheme.lightTheme;
+  }
 }
