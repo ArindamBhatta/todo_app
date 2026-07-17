@@ -30,6 +30,7 @@ dependencies:
   awesome_notifications: ^0.10.1
   riverpod: ^2.6.1
   dots_indicator: ^4.0.1
+  flutter_bloc: ^9.1.1
 
 dev_dependencies:
   flutter_test:
