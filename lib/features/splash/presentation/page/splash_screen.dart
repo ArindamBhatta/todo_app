@@ -167,18 +167,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                   ),
 
                   const Spacer(flex: 2),
-
-                  // Loading Indicator
-                  const SizedBox(
-                    height: 56,
-                    child: Center(
-                      child: CircularProgressIndicator(
-                        color: Color(0xFF5B3DE2), // Purple/Indigo color
-                        strokeWidth: 3,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
                 ],
               ),
             ),

@@ -55,6 +55,11 @@ flutter:
     - 'assets/Personal.jpg'
     - 'assets/Self_Development.jpg'
     - 'assets/Fun.jpg'
+    - 'assets/never_miss_deadline.png'
+    - 'assets/plan_your_day.png'
+    - 'assets/track_progress_daily.png'
+    - 'assets/prioritize_what_matters.png'
+
   
    
 

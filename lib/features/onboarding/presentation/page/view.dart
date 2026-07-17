@@ -18,26 +18,28 @@ class OnBoardingScreen extends ConsumerStatefulWidget {
 class _OnBoardingScreenState extends ConsumerState<OnBoardingScreen> {
   List<Map<String, String>> list = [
     {
-      'caption': 'Explore the new to \n find good places',
+      'caption': 'Plan your day clarity',
       'subCaption':
-          'Travel around the world with just a tap and enjoy your best holiday',
-      'imageUrl': 'assets/images/onboarding_img_one.png',
+          'Create tasks in seconds and keep your day organized from morning to night.',
+      'imageUrl': 'assets/plan_your_day.png',
     },
     {
-      'caption': 'Adventure awaits \n ✈️ ',
+      'caption': 'Prioritize what matters',
       'subCaption':
-          "Pack your bags, book your flight, and let's explore the world together",
-      'imageUrl': 'assets/images/onboarding_img_two.png',
+          'Focus on urgent and important tasks so your energy goes to the right work.',
+      'imageUrl': 'assets/prioritize_what_matters.png',
     },
     {
-      'caption': 'Lost in the beauty of nature',
-      'subCaption': "Let's explore the world, one destination at a time.",
-      'imageUrl': 'assets/images/onboarding_img_three.png',
+      'caption': 'Track progress daily',
+      'subCaption':
+          'See completed tasks grow and build momentum every single day.',
+      'imageUrl': 'assets/track_progress_daily.png',
     },
     {
-      'caption': 'Relax, Refresh, Recharge',
-      'subCaption': "Find your perfect getaway and unwind in style.",
-      'imageUrl': 'assets/images/onboarding_img_four.png',
+      'caption': 'Never miss a deadline',
+      'subCaption':
+          'Use reminders and smart scheduling to stay on top of every commitment.',
+      'imageUrl': 'assets/never_miss_deadline.png',
     },
   ];
 
@@ -161,7 +163,8 @@ class _OnBoardingScreenState extends ConsumerState<OnBoardingScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 10),
+          Spacer(),
+
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24.0),
             child: SizedBox(
