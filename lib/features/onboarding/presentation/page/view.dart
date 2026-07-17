@@ -1,21 +1,21 @@
 import 'package:dots_indicator/dots_indicator.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'dart:async';
 
+import 'package:todo/core/router/app_router.dart';
 import 'package:todo/features/onboarding/presentation/page/widgets/scrollable_screen.dart';
 import 'package:todo/features/onboarding/presentation/logic/onboarding_manager.dart';
-import 'package:todo/features/auth/presentation/logic/auth_manager.dart';
-import 'package:todo/features/auth/presentation/pages/login_screen.dart';
 
-class OnBoardingScreen extends ConsumerStatefulWidget {
+class OnBoardingScreen extends StatefulWidget {
   const OnBoardingScreen({super.key});
 
   @override
-  ConsumerState<OnBoardingScreen> createState() => _OnBoardingScreenState();
+  State<OnBoardingScreen> createState() => _OnBoardingScreenState();
 }
 
-class _OnBoardingScreenState extends ConsumerState<OnBoardingScreen> {
+class _OnBoardingScreenState extends State<OnBoardingScreen> {
   List<Map<String, String>> list = [
     {
       'caption': 'Plan your day clarity',
@@ -183,22 +183,10 @@ class _OnBoardingScreenState extends ConsumerState<OnBoardingScreen> {
                 ),
                 child: ElevatedButton(
                   onPressed: () async {
-                    final navigator = Navigator.of(context);
-                    await ref
-                        .read(onboardingProvider.notifier)
+                    await context
+                        .read<OnboardingManager>()
                         .completeOnboarding();
-                    final isLoggedIn = ref.read(authProvider).value ?? false;
-                    if (isLoggedIn) {
-                      navigator.pushReplacement(
-                        MaterialPageRoute(builder: (context) => LoginScreen()),
-                      );
-                    } else {
-                      navigator.pushReplacement(
-                        MaterialPageRoute(
-                          builder: (context) => const LoginScreen(),
-                        ),
-                      );
-                    }
+                    if (mounted) context.go(AppRoutes.login);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF4F46E5), // Indigo 600

@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:todo/data/todo.dart';
 import 'package:todo/features/home/presentation/logic/todo_manager.dart';
 import 'package:intl/intl.dart';
@@ -178,14 +178,14 @@ class _ShakeWidgetState extends State<ShakeWidget> with SingleTickerProviderStat
   }
 }
 
-class HomeScreen extends ConsumerStatefulWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
@@ -268,7 +268,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             actions: [
               TextButton(
                 onPressed: () async {
-                  await ref.read(taskListProvider.notifier).deleteTask(task.id);
+                  await ctx.read<TaskManager>().deleteTask(task.id);
                   if (ctx.mounted) Navigator.pop(ctx);
                 },
                 child: const Text(
@@ -278,9 +278,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
               FilledButton(
                 onPressed: () async {
-                  await ref
-                      .read(taskListProvider.notifier)
-                      .toggleTaskStatus(task.id);
+                  await ctx.read<TaskManager>().toggleTaskStatus(task.id);
                   if (ctx.mounted) Navigator.pop(ctx);
                 },
                 style: FilledButton.styleFrom(
@@ -321,23 +319,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final tasksAsyncValue = ref.watch(taskListProvider);
-
     return Scaffold(
-      backgroundColor: const Color(
-        0xFFF8FAFC,
-      ), // Ultra-clean premium slate background
+      backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
-        child: tasksAsyncValue.when(
-          data: (tasks) {
+        child: BlocBuilder<TaskManager, TaskState>(
+          builder: (context, state) {
+            if (state is TaskLoading) {
+              return const Center(
+                child: CircularProgressIndicator(color: Color(0xFF5E42EB)),
+              );
+            }
+            if (state is TaskError) {
+              return Center(child: Text('Failed to load tasks: ${state.message}'));
+            }
+            final tasks = (state as TaskLoaded).tasks;
             final totalTasks = tasks.length;
             final completedTasks = tasks.where((t) => !t.isPending).length;
             final inProgressTasks = tasks.where((t) => t.isPending).toList();
-
             final completionRate =
                 totalTasks == 0 ? 0.0 : completedTasks / totalTasks;
-
-
 
             return SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
@@ -745,12 +745,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             );
           },
-          loading:
-              () => const Center(
-                child: CircularProgressIndicator(color: Color(0xFF5E42EB)),
-              ),
-          error:
-              (error, _) => Center(child: Text('Failed to load tasks: $error')),
         ),
       ),
     );

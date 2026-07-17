@@ -1,91 +1,87 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
 import 'package:todo/data/todo.dart';
 import 'package:todo/data/todo_repository.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
 
-final todoRepositoryProvider = Provider<TodoRepository>((ref) {
-  return TodoRepository();
-});
+part 'task_state.dart';
 
-final taskListProvider =
-    AsyncNotifierProvider<TaskListNotifier, List<ElementTask>>(
-      TaskListNotifier.new,
-    );
+class TaskManager extends Cubit<TaskState> {
+  final TodoRepository _repository;
 
-class TaskListNotifier extends AsyncNotifier<List<ElementTask>> {
-  late final TodoRepository _repository;
+  TaskManager(this._repository) : super(TaskLoading()) {
+    _initialize();
+  }
 
-  @override
-  Future<List<ElementTask>> build() async {
-    _repository = ref.read(todoRepositoryProvider);
-    final tasks = await _repository.fetchTasks();
-    if (tasks.isEmpty) {
-      final defaultTasks = [
-        ElementTask(
-          name: 'Grocery shopping app design',
-          category: 'Office',
-          urgencyLevel: 'Urgent Important',
-          isPending: true,
-          color: const Color(0xFF4F46E5),
-          startTime: DateTime.now().subtract(const Duration(hours: 2)),
-          absoluteDeadline: DateTime.now().add(const Duration(days: 1)),
-          desireDeadline: DateTime.now().add(const Duration(hours: 4)),
-        ),
-        ElementTask(
-          name: 'Uber Eats redesign challenge',
-          category: 'Personal',
-          urgencyLevel: 'Not Urgent Important',
-          isPending: true,
-          color: const Color(0xFF10B981),
-          startTime: DateTime.now().subtract(const Duration(hours: 1)),
-          absoluteDeadline: DateTime.now().add(const Duration(days: 2)),
-          desireDeadline: DateTime.now().add(const Duration(hours: 12)),
-        ),
-        ElementTask(
-          name: 'Revise flutter unit testing',
-          category: 'Self',
-          urgencyLevel: 'Not Urgent Important',
-          isPending: true,
-          color: const Color(0xFFF59E0B),
-          startTime: DateTime.now(),
-          absoluteDeadline: DateTime.now().add(const Duration(days: 3)),
-          desireDeadline: DateTime.now().add(const Duration(days: 1)),
-        ),
-        // Completed tasks for stats
-        ElementTask(
-          name: 'Team standup meeting',
-          category: 'Office',
-          urgencyLevel: 'Urgent Important',
-          isPending: false,
-          color: const Color(0xFF4F46E5),
-          startTime: DateTime.now().subtract(const Duration(hours: 4)),
-          absoluteDeadline: DateTime.now().add(const Duration(hours: 2)),
-          desireDeadline: DateTime.now().subtract(const Duration(hours: 3)),
-        ),
-        ElementTask(
-          name: 'Morning jog 5km',
-          category: 'Health',
-          urgencyLevel: 'Not Important Urgent',
-          isPending: false,
-          color: const Color(0xFF10B981),
-          startTime: DateTime.now().subtract(const Duration(hours: 6)),
-          absoluteDeadline: DateTime.now().add(const Duration(hours: 4)),
-          desireDeadline: DateTime.now().subtract(const Duration(hours: 5)),
-        ),
-      ];
-
-      for (final t in defaultTasks) {
-        await _repository.insertTask(t);
+  Future<void> _initialize() async {
+    try {
+      final tasks = await _repository.fetchTasks();
+      if (tasks.isEmpty) {
+        final defaultTasks = [
+          ElementTask(
+            name: 'Grocery shopping app design',
+            category: 'Office',
+            urgencyLevel: 'Urgent Important',
+            isPending: true,
+            color: const Color(0xFF4F46E5),
+            startTime: DateTime.now().subtract(const Duration(hours: 2)),
+            absoluteDeadline: DateTime.now().add(const Duration(days: 1)),
+            desireDeadline: DateTime.now().add(const Duration(hours: 4)),
+          ),
+          ElementTask(
+            name: 'Uber Eats redesign challenge',
+            category: 'Personal',
+            urgencyLevel: 'Not Urgent Important',
+            isPending: true,
+            color: const Color(0xFF10B981),
+            startTime: DateTime.now().subtract(const Duration(hours: 1)),
+            absoluteDeadline: DateTime.now().add(const Duration(days: 2)),
+            desireDeadline: DateTime.now().add(const Duration(hours: 12)),
+          ),
+          ElementTask(
+            name: 'Revise flutter unit testing',
+            category: 'Self',
+            urgencyLevel: 'Not Urgent Important',
+            isPending: true,
+            color: const Color(0xFFF59E0B),
+            startTime: DateTime.now(),
+            absoluteDeadline: DateTime.now().add(const Duration(days: 3)),
+            desireDeadline: DateTime.now().add(const Duration(days: 1)),
+          ),
+          ElementTask(
+            name: 'Team standup meeting',
+            category: 'Office',
+            urgencyLevel: 'Urgent Important',
+            isPending: false,
+            color: const Color(0xFF4F46E5),
+            startTime: DateTime.now().subtract(const Duration(hours: 4)),
+            absoluteDeadline: DateTime.now().add(const Duration(hours: 2)),
+            desireDeadline: DateTime.now().subtract(const Duration(hours: 3)),
+          ),
+          ElementTask(
+            name: 'Morning jog 5km',
+            category: 'Health',
+            urgencyLevel: 'Not Important Urgent',
+            isPending: false,
+            color: const Color(0xFF10B981),
+            startTime: DateTime.now().subtract(const Duration(hours: 6)),
+            absoluteDeadline: DateTime.now().add(const Duration(hours: 4)),
+            desireDeadline: DateTime.now().subtract(const Duration(hours: 5)),
+          ),
+        ];
+        for (final t in defaultTasks) {
+          await _repository.insertTask(t);
+        }
       }
-      return _repository.fetchTasks();
+      emit(TaskLoaded(await _repository.fetchTasks()));
+    } catch (e) {
+      emit(TaskError(e.toString()));
     }
-    return tasks;
   }
 
   Future<void> _refresh() async {
-    state = const AsyncLoading();
-    state = AsyncData(await _repository.fetchTasks());
+    emit(TaskLoaded(await _repository.fetchTasks()));
   }
 
   Future<void> addTask(ElementTask task) async {
@@ -103,7 +99,6 @@ class TaskListNotifier extends AsyncNotifier<List<ElementTask>> {
           ),
         );
       } catch (e) {
-        // Fail-safe in testing or unsupported platforms
         debugPrint('Failed to send notification: $e');
       }
     }
@@ -121,16 +116,18 @@ class TaskListNotifier extends AsyncNotifier<List<ElementTask>> {
   }
 
   Future<void> toggleTaskStatus(String id) async {
-    final tasks = state.valueOrNull ?? await _repository.fetchTasks();
-    final taskIndex = tasks.indexWhere((task) => task.id == id);
-    if (taskIndex == -1) {
-      return;
-    }
+    final currentState = state;
+    final tasks = currentState is TaskLoaded
+        ? currentState.tasks
+        : await _repository.fetchTasks();
 
-    final toggledTask = tasks[taskIndex].copyWith(
+    final taskIndex = tasks.indexWhere((t) => t.id == id);
+    if (taskIndex == -1) return;
+
+    final toggled = tasks[taskIndex].copyWith(
       isPending: !tasks[taskIndex].isPending,
     );
-    await _repository.updateTask(toggledTask);
+    await _repository.updateTask(toggled);
     await _refresh();
   }
 }

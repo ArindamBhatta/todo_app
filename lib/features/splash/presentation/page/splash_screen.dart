@@ -1,203 +1,150 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:todo/features/auth/presentation/logic/biometric_auth_service.dart';
-import 'package:todo/features/onboarding/presentation/logic/onboarding_manager.dart';
-import 'package:todo/features/onboarding/presentation/page/view.dart';
-import 'package:todo/features/auth/presentation/logic/auth_manager.dart';
-import 'package:todo/features/auth/presentation/pages/login_screen.dart';
-import 'package:todo/features/home/presentation/page/view.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:todo/core/router/app_router.dart';
+import 'package:todo/features/splash/presentation/logic/splash_manager.dart';
 
-class SplashScreen extends ConsumerStatefulWidget {
+class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  ConsumerState<SplashScreen> createState() => _SplashScreenState();
+  State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends ConsumerState<SplashScreen> {
-  final BiometricAuthService _biometricAuthService = BiometricAuthService();
-
+class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _initializeNavigation();
-  }
-
-  Future<void> _initializeNavigation() async {
-    try {
-      // Wait for a minimum of 2.5 seconds to display splash animation,
-      // and retrieve onboarding/auth states concurrently.
-      final results = await Future.wait([
-        Future.delayed(const Duration(milliseconds: 2500)),
-        ref.read(onboardingProvider.future),
-        ref.read(authProvider.future),
-      ]);
-
-      final bool onboardingCompleted = results[1] as bool;
-      final bool isLoggedIn = results[2] as bool;
-
-      if (!mounted) return;
-
-      if (!onboardingCompleted) {
-        // Navigate to Onboarding tutorial
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const OnBoardingScreen()),
-        );
-      } else if (!isLoggedIn) {
-        // Navigate to Login screen
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
-        );
-      } else {
-        final authManager = ref.read(authProvider.notifier);
-        final bool biometricEnabled = await authManager.isBiometricEnabled();
-
-        if (!mounted) return;
-
-        if (!biometricEnabled) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => const AppNavigationPage()),
-          );
-          return;
-        }
-
-        final bool authenticated = await _biometricAuthService.authenticate();
-        if (!mounted) return;
-
-        if (authenticated) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => const AppNavigationPage()),
-          );
-        } else {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => const LoginScreen()),
-          );
-        }
-      }
-    } catch (e) {
-      // Fallback navigation in case of error
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const OnBoardingScreen()),
-        );
-      }
-    }
+    context.read<SplashManager>().initialize();
   }
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC), // Slate 50
-      body: Stack(
-        children: [
-          // Background Blobs (Soft gradients)
-          Positioned(
-            top: -50,
-            left: -50,
-            child: _GlowBlob(
-              size: 260,
-              color: const Color(0xFF86EFAC), // Soft light green
-            ),
-          ),
-          Positioned(
-            top: 50,
-            right: -60,
-            child: _GlowBlob(
-              size: 280,
-              color: const Color(0xFFDDD6FE), // Soft light violet/purple
-            ),
-          ),
-          Positioned(
-            bottom: 120,
-            left: -80,
-            child: _GlowBlob(
-              size: 320,
-              color: const Color(0xFFBFDBFE), // Soft light blue
-            ),
-          ),
-          Positioned(
-            bottom: -40,
-            right: -40,
-            child: _GlowBlob(
-              size: 240,
-              color: const Color(0xFFFEF08A), // Soft light yellow
-            ),
-          ),
-
-          // Corner circles (Stylized mockup border design)
-          Positioned(top: 36, left: 24, child: _CornerRing()),
-          Positioned(top: 36, right: 24, child: _CornerRing()),
-          Positioned(bottom: 36, left: 24, child: _CornerRing()),
-          Positioned(bottom: 36, right: 24, child: _CornerRing()),
-
-          // Foreground Content
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 24.0,
-                vertical: 16.0,
+    return BlocListener<SplashManager, SplashState>(
+      listener: (context, state) {
+        if (state is SplashNavigateToOnboarding) {
+          context.go(AppRoutes.onboarding);
+        } else if (state is SplashNavigateToLogin) {
+          context.go(AppRoutes.login);
+        } else if (state is SplashNavigateToHome) {
+          context.go(AppRoutes.home);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC), // Slate 50
+        body: Stack(
+          children: [
+            // Background Blobs (Soft gradients)
+            Positioned(
+              top: -50,
+              left: -50,
+              child: _GlowBlob(
+                size: 260,
+                color: const Color(0xFF86EFAC), // Soft light green
               ),
-              child: Column(
-                children: [
-                  const Spacer(flex: 2),
+            ),
+            Positioned(
+              top: 50,
+              right: -60,
+              child: _GlowBlob(
+                size: 280,
+                color: const Color(0xFFDDD6FE), // Soft light violet/purple
+              ),
+            ),
+            Positioned(
+              bottom: 120,
+              left: -80,
+              child: _GlowBlob(
+                size: 320,
+                color: const Color(0xFFBFDBFE), // Soft light blue
+              ),
+            ),
+            Positioned(
+              bottom: -40,
+              right: -40,
+              child: _GlowBlob(
+                size: 240,
+                color: const Color(0xFFFEF08A), // Soft light yellow
+              ),
+            ),
 
-                  // 3D Illustration with floating animation
-                  Flexible(
-                    flex: 8,
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxHeight: size.height * 0.45,
-                      ),
-                      child: const _FloatingWidget(
-                        child: Center(
-                          child: Image(
-                            image: AssetImage('assets/splash_illustration.png'),
-                            fit: BoxFit.contain,
+            // Corner circles (Stylized mockup border design)
+            Positioned(top: 36, left: 24, child: _CornerRing()),
+            Positioned(top: 36, right: 24, child: _CornerRing()),
+            Positioned(bottom: 36, left: 24, child: _CornerRing()),
+            Positioned(bottom: 36, right: 24, child: _CornerRing()),
+
+            // Foreground Content
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24.0,
+                  vertical: 16.0,
+                ),
+                child: Column(
+                  children: [
+                    const Spacer(flex: 2),
+
+                    // 3D Illustration with floating animation
+                    Flexible(
+                      flex: 8,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxHeight: size.height * 0.45,
+                        ),
+                        child: const _FloatingWidget(
+                          child: Center(
+                            child: Image(
+                              image: AssetImage(
+                                'assets/splash_illustration.png',
+                              ),
+                              fit: BoxFit.contain,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
 
-                  const Spacer(flex: 1),
+                    const Spacer(flex: 1),
 
-                  // Title text
-                  const Text(
-                    'Task Management & \nTo-Do List',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w900,
-                      color: Color(0xFF0F172A), // Slate 900
-                      height: 1.3,
-                      letterSpacing: -0.5,
+                    // Title text
+                    const Text(
+                      'Task Management & \nTo-Do List',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF0F172A), // Slate 900
+                        height: 1.3,
+                        letterSpacing: -0.5,
+                      ),
                     ),
-                  ),
 
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-                  // Subtitle/Description text
-                  const Text(
-                    'This productive tool is designed to help\nyou better manage your task\nproject-wise conveniently!',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFF64748B), // Slate 500
-                      fontWeight: FontWeight.w500,
-                      height: 1.5,
+                    // Subtitle/Description text
+                    const Text(
+                      'This productive tool is designed to help\nyou better manage your task\nproject-wise conveniently!',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF64748B), // Slate 500
+                        fontWeight: FontWeight.w500,
+                        height: 1.5,
+                      ),
                     ),
-                  ),
 
-                  const Spacer(flex: 2),
-                ],
+                    const Spacer(flex: 2),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
-      ),
-    );
+          ],
+        ),
+      ), // closes Scaffold
+    ); // closes BlocListener
   }
 }
 

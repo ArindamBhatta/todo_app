@@ -1,54 +1,26 @@
-import 'package:sqflite/sqflite.dart';
-import 'package:todo/data/todo_database.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthLocalDataSource {
   static const String _isLoggedInKey = 'is_logged_in';
   static const String _isBiometricEnabledKey = 'is_biometric_enabled';
 
   Future<bool> isLoggedIn() async {
-    final db = await TodoDatabase.instance.database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'app_settings',
-      where: 'key = ?',
-      whereArgs: [_isLoggedInKey],
-    );
-    if (maps.isEmpty) {
-      return false;
-    }
-    return maps.first['value'] == 'true';
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_isLoggedInKey) ?? false;
   }
 
   Future<void> setLoggedIn(bool loggedIn) async {
-    final db = await TodoDatabase.instance.database;
-    await db.insert(
-      'app_settings',
-      {'key': _isLoggedInKey, 'value': loggedIn ? 'true' : 'false'},
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_isLoggedInKey, loggedIn);
   }
 
   Future<bool> isBiometricEnabled() async {
-    final db = await TodoDatabase.instance.database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'app_settings',
-      where: 'key = ?',
-      whereArgs: [_isBiometricEnabledKey],
-    );
-    if (maps.isEmpty) {
-      return false;
-    }
-    return maps.first['value'] == 'true';
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_isBiometricEnabledKey) ?? false;
   }
 
   Future<void> setBiometricEnabled(bool enabled) async {
-    final db = await TodoDatabase.instance.database;
-    await db.insert(
-      'app_settings',
-      {
-        'key': _isBiometricEnabledKey,
-        'value': enabled ? 'true' : 'false',
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_isBiometricEnabledKey, enabled);
   }
 }

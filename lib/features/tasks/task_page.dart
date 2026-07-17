@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:todo/data/todo.dart';
 import 'package:todo/features/home/presentation/logic/todo_manager.dart';
 
-class TaskPage extends ConsumerStatefulWidget {
+class TaskPage extends StatefulWidget {
   const TaskPage({super.key});
 
   @override
-  ConsumerState<TaskPage> createState() => _TaskPageState();
+  State<TaskPage> createState() => _TaskPageState();
 }
 
-class _TaskPageState extends ConsumerState<TaskPage> {
+class _TaskPageState extends State<TaskPage> {
   String _selectedCategoryFilter = 'All';
   String _selectedStatusFilter = 'All'; // 'All', 'Active', 'Completed'
 
@@ -55,7 +55,7 @@ class _TaskPageState extends ConsumerState<TaskPage> {
             actions: [
               TextButton(
                 onPressed: () async {
-                  await ref.read(taskListProvider.notifier).deleteTask(task.id);
+                  await ctx.read<TaskManager>().deleteTask(task.id);
                   if (ctx.mounted) Navigator.pop(ctx);
                 },
                 child: const Text(
@@ -256,8 +256,6 @@ class _TaskPageState extends ConsumerState<TaskPage> {
 
   @override
   Widget build(BuildContext context) {
-    final tasksAsync = ref.watch(taskListProvider);
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('All Tasks'),
@@ -273,8 +271,19 @@ class _TaskPageState extends ConsumerState<TaskPage> {
           ),
         ],
       ),
-      body: tasksAsync.when(
-        data: (tasks) {
+      body: BlocBuilder<TaskManager, TaskState>(
+        builder: (context, state) {
+          if (state is TaskLoading) {
+            return const Center(
+              child: CircularProgressIndicator(color: Color(0xFF4F46E5)),
+            );
+          }
+          if (state is TaskError) {
+            return Center(
+              child: Text('Failed to load tasks: ${state.message}'),
+            );
+          }
+          final tasks = (state as TaskLoaded).tasks;
           final filteredTasks =
               tasks.where((task) {
                 final matchesCategory =
@@ -399,9 +408,9 @@ class _TaskPageState extends ConsumerState<TaskPage> {
                           right: 0,
                           child: InkWell(
                             onTap: () {
-                              ref
-                                  .read(taskListProvider.notifier)
-                                  .toggleTaskStatus(task.id);
+                              context.read<TaskManager>().toggleTaskStatus(
+                                task.id,
+                              );
                             },
                             borderRadius: BorderRadius.circular(20),
                             child: Container(
@@ -440,8 +449,6 @@ class _TaskPageState extends ConsumerState<TaskPage> {
             },
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text('Error: $error')),
       ),
     );
   }

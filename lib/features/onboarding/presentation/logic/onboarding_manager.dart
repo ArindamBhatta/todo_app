@@ -1,25 +1,13 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/repositories/onboarding_repository.dart';
 
-class OnboardingManager extends AsyncNotifier<bool> {
-  @override
-  Future<bool> build() async {
-    final repository = ref.watch(onboardingRepositoryProvider);
-    return repository.isOnboardingCompleted();
-  }
+class OnboardingManager extends Cubit<bool> {
+  final OnboardingRepository _repository;
+
+  OnboardingManager(this._repository) : super(false);
 
   Future<void> completeOnboarding() async {
-    state = const AsyncLoading();
-    try {
-      final repository = ref.read(onboardingRepositoryProvider);
-      await repository.setOnboardingCompleted(true);
-      state = const AsyncData(true);
-    } catch (e, st) {
-      state = AsyncError(e, st);
-    }
+    await _repository.setOnboardingCompleted(true);
+    emit(true);
   }
 }
-
-final onboardingProvider = AsyncNotifierProvider<OnboardingManager, bool>(() {
-  return OnboardingManager();
-});

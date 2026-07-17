@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:todo/core/router/app_router.dart';
 import 'package:todo/features/auth/presentation/logic/auth_manager.dart';
 import 'package:todo/features/auth/presentation/logic/biometric_auth_service.dart';
-import 'package:todo/features/home/presentation/page/view.dart';
 
-class LoginScreen extends ConsumerStatefulWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  ConsumerState<LoginScreen> createState() => _LoginScreenState();
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends ConsumerState<LoginScreen> {
+class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -36,13 +37,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     try {
       // Simulate network request
       await Future.delayed(const Duration(milliseconds: 1000));
-      await ref.read(authProvider.notifier).login();
+      await context.read<AuthManager>().login();
       await _maybeEnableBiometric();
 
       if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const AppNavigationPage()),
-        );
+        context.go(AppRoutes.home);
       }
     } catch (e) {
       if (mounted) {
@@ -60,7 +59,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _maybeEnableBiometric() async {
-    final authManager = ref.read(authProvider.notifier);
+    final authManager = context.read<AuthManager>();
     final bool alreadyEnabled = await authManager.isBiometricEnabled();
     if (alreadyEnabled || !mounted) {
       return;

@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:todo/features/home/presentation/page/home_screen.dart';
 import 'package:todo/features/tasks/task_page.dart';
 
-class AppNavigationPage extends ConsumerStatefulWidget {
+class AppNavigationPage extends StatefulWidget {
   const AppNavigationPage({super.key});
 
   @override
-  ConsumerState<AppNavigationPage> createState() => _AppNavigationPageState();
+  State<AppNavigationPage> createState() => _AppNavigationPageState();
 }
 
-class _AppNavigationPageState extends ConsumerState<AppNavigationPage> {
+class _AppNavigationPageState extends State<AppNavigationPage> {
   int currentPageIndex = 0;
 
   final List<Widget> screens = [
