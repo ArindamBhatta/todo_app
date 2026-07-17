@@ -1,4 +1,4 @@
-package com.learning.expence.todo
+package com.learning.expense.todo
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 
