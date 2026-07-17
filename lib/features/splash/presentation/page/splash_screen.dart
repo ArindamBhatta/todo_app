@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:todo/core/router/app_router.dart';
-import 'package:todo/features/splash/presentation/logic/splash_manager.dart';
+import 'package:todo/features/splash/presentation/page/corner_ring.dart';
+
+import '../logic/splash_manager.dart';
+import 'floating_widget.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -71,10 +74,10 @@ class _SplashScreenState extends State<SplashScreen> {
             ),
 
             // Corner circles (Stylized mockup border design)
-            Positioned(top: 36, left: 24, child: _CornerRing()),
-            Positioned(top: 36, right: 24, child: _CornerRing()),
-            Positioned(bottom: 36, left: 24, child: _CornerRing()),
-            Positioned(bottom: 36, right: 24, child: _CornerRing()),
+            Positioned(top: 36, left: 24, child: CornerRing()),
+            Positioned(top: 36, right: 24, child: CornerRing()),
+            Positioned(bottom: 36, left: 24, child: CornerRing()),
+            Positioned(bottom: 36, right: 24, child: CornerRing()),
 
             // Foreground Content
             SafeArea(
@@ -94,7 +97,7 @@ class _SplashScreenState extends State<SplashScreen> {
                         constraints: BoxConstraints(
                           maxHeight: size.height * 0.45,
                         ),
-                        child: const _FloatingWidget(
+                        child: const FloatingWidget(
                           child: Center(
                             child: Image(
                               image: AssetImage(
@@ -164,74 +167,13 @@ class _GlowBlob extends StatelessWidget {
         shape: BoxShape.circle,
         gradient: RadialGradient(
           colors: [
-            color.withOpacity(0.35),
-            color.withOpacity(0.12),
-            color.withOpacity(0),
+            color.withValues(alpha: 0.35),
+            color.withValues(alpha: 0.12),
+            color.withValues(alpha: 0),
           ],
           stops: const [0.0, 0.55, 1.0],
         ),
       ),
-    );
-  }
-}
-
-// Corner ring widget
-class _CornerRing extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 12,
-      height: 12,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: const Color(0xFF60A5FA).withOpacity(0.6), // Light blue border
-          width: 1.5,
-        ),
-      ),
-    );
-  }
-}
-
-// Floating micro-animation widget
-class _FloatingWidget extends StatefulWidget {
-  final Widget child;
-  const _FloatingWidget({required this.child});
-
-  @override
-  State<_FloatingWidget> createState() => _FloatingWidgetState();
-}
-
-class _FloatingWidgetState extends State<_FloatingWidget>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(seconds: 3),
-      vsync: this,
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return Transform.translate(
-          offset: Offset(0, 8 * _controller.value - 4),
-          child: child,
-        );
-      },
-      child: widget.child,
     );
   }
 }
