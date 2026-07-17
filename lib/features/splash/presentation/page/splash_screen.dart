@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:todo/features/auth/presentation/logic/biometric_auth_service.dart';
 import 'package:todo/features/onboarding/presentation/logic/onboarding_manager.dart';
 import 'package:todo/features/onboarding/presentation/page/view.dart';
 import 'package:todo/features/auth/presentation/logic/auth_manager.dart';
 import 'package:todo/features/auth/presentation/pages/login_screen.dart';
+import 'package:todo/features/home/presentation/page/view.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -13,6 +15,8 @@ class SplashScreen extends ConsumerStatefulWidget {
 }
 
 class _SplashScreenState extends ConsumerState<SplashScreen> {
+  final BiometricAuthService _biometricAuthService = BiometricAuthService();
+
   @override
   void initState() {
     super.initState();
@@ -45,10 +49,30 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
           MaterialPageRoute(builder: (context) => const LoginScreen()),
         );
       } else {
-        // Navigate to Home screen (OnBoardingPage tab wrapper)
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const OnBoardingScreen()),
-        );
+        final authManager = ref.read(authProvider.notifier);
+        final bool biometricEnabled = await authManager.isBiometricEnabled();
+
+        if (!mounted) return;
+
+        if (!biometricEnabled) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => const AppNavigationPage()),
+          );
+          return;
+        }
+
+        final bool authenticated = await _biometricAuthService.authenticate();
+        if (!mounted) return;
+
+        if (authenticated) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => const AppNavigationPage()),
+          );
+        } else {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => const LoginScreen()),
+          );
+        }
       }
     } catch (e) {
       // Fallback navigation in case of error

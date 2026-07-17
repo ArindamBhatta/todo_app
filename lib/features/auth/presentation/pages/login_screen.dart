@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:todo/features/auth/presentation/logic/auth_manager.dart';
-import 'package:todo/features/onboarding/presentation/page/view.dart';
+import 'package:todo/features/auth/presentation/logic/biometric_auth_service.dart';
+import 'package:todo/features/home/presentation/page/view.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -16,6 +17,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
+  final BiometricAuthService _biometricAuthService = BiometricAuthService();
 
   @override
   void dispose() {
@@ -35,10 +37,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       // Simulate network request
       await Future.delayed(const Duration(milliseconds: 1000));
       await ref.read(authProvider.notifier).login();
+      await _maybeEnableBiometric();
 
       if (mounted) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const OnBoardingScreen()),
+          MaterialPageRoute(builder: (context) => const AppNavigationPage()),
         );
       }
     } catch (e) {
@@ -53,6 +56,63 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  Future<void> _maybeEnableBiometric() async {
+    final authManager = ref.read(authProvider.notifier);
+    final bool alreadyEnabled = await authManager.isBiometricEnabled();
+    if (alreadyEnabled || !mounted) {
+      return;
+    }
+
+    final bool canUseBiometrics = await _biometricAuthService.canUseBiometrics();
+    if (!canUseBiometrics || !mounted) {
+      return;
+    }
+
+    final bool? shouldEnable = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Enable biometric login?'),
+          content: const Text(
+            'Use fingerprint or face unlock next time for faster guest login.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Not now'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Enable'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldEnable != true || !mounted) {
+      return;
+    }
+
+    final bool authenticated = await _biometricAuthService.authenticate();
+    if (!mounted) {
+      return;
+    }
+
+    if (authenticated) {
+      await authManager.setBiometricEnabled(true);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Biometric login enabled.')),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Biometric setup was not completed.')),
+      );
     }
   }
 

@@ -31,6 +31,7 @@ dependencies:
   riverpod: ^2.6.1
   dots_indicator: ^4.0.1
   flutter_bloc: ^9.1.1
+  local_auth: ^3.0.2
 
 dev_dependencies:
   flutter_test:

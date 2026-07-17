@@ -29,6 +29,16 @@ class AuthManager extends AsyncNotifier<bool> {
       state = AsyncError(e, st);
     }
   }
+
+  Future<bool> isBiometricEnabled() async {
+    final repository = ref.read(authRepositoryProvider);
+    return repository.isBiometricEnabled();
+  }
+
+  Future<void> setBiometricEnabled(bool enabled) async {
+    final repository = ref.read(authRepositoryProvider);
+    await repository.setBiometricEnabled(enabled);
+  }
 }
 
 final authProvider = AsyncNotifierProvider<AuthManager, bool>(() {

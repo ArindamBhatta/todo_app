@@ -190,7 +190,7 @@ class _OnBoardingScreenState extends ConsumerState<OnBoardingScreen> {
                     final isLoggedIn = ref.read(authProvider).value ?? false;
                     if (isLoggedIn) {
                       navigator.pushReplacement(
-                        MaterialPageRoute(builder: (context) => Placeholder()),
+                        MaterialPageRoute(builder: (context) => LoginScreen()),
                       );
                     } else {
                       navigator.pushReplacement(

@@ -13,6 +13,14 @@ class AuthRepository {
   Future<void> setLoggedIn(bool loggedIn) async {
     await _dataSource.setLoggedIn(loggedIn);
   }
+
+  Future<bool> isBiometricEnabled() async {
+    return _dataSource.isBiometricEnabled();
+  }
+
+  Future<void> setBiometricEnabled(bool enabled) async {
+    await _dataSource.setBiometricEnabled(enabled);
+  }
 }
 
 final authLocalDataSourceProvider = Provider<AuthLocalDataSource>((ref) {
