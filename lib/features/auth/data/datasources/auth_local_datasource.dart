@@ -1,26 +1,72 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthLocalDataSource {
-  static const String _isLoggedInKey = 'is_logged_in';
   static const String _isBiometricEnabledKey = 'is_biometric_enabled';
+  static const _guestMode = 'guest_mode';
 
-  Future<bool> isLoggedIn() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_isLoggedInKey) ?? false;
-  }
-
-  Future<void> setLoggedIn(bool loggedIn) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_isLoggedInKey, loggedIn);
-  }
-
+  // check if biometric authentication is enabled
   Future<bool> isBiometricEnabled() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_isBiometricEnabledKey) ?? false;
+    final sharedPreferences = await SharedPreferences.getInstance();
+    return sharedPreferences.getBool(_isBiometricEnabledKey) ?? false;
   }
 
+  // set biometric authentication status
   Future<void> setBiometricEnabled(bool enabled) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_isBiometricEnabledKey, enabled);
+    final sharedPreferences = await SharedPreferences.getInstance();
+    await sharedPreferences.setBool(_isBiometricEnabledKey, enabled);
+  }
+
+  Future<bool> isGuestMode() async {
+    final sharedPreferences = await SharedPreferences.getInstance();
+    return sharedPreferences.getBool(_guestMode) ?? false;
+  }
+
+  Future<void> setGuestMode(bool value) async {
+    final sharedPreferences = await SharedPreferences.getInstance();
+    await sharedPreferences.setBool(_guestMode, value);
   }
 }
+
+/* 
+First launch
+────────────
+
+Splash
+   │
+   ▼
+Firebase.currentUser == null
+   │
+   ▼
+Google Sign-In (mandatory)
+   │
+   ▼
+Firebase creates user
+   │
+   ▼
+Ask user to enroll/enable biometric (mandatory)
+   │
+   ▼
+Home
+
+
+Then every subsequent launch:
+
+Splash
+   │
+   ▼
+Firebase.currentUser == null ?
+   │
+   ├── Yes → Google Sign-In
+   │
+   └── No
+         │
+         ▼
+   Biometric Authentication
+         │
+    ┌────┴────┐
+    │         │
+ Success    Failed
+    │         │
+    ▼         ▼
+ Home     Stay Locked
+ */

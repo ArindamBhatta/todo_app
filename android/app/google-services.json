@@ -12,7 +12,20 @@
           "package_name": "com.learning.expense.todo"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "616392558134-7vnphc2462jcv570nn7ka2rjgtnskk13.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.learning.expense.todo",
+            "certificate_hash": "955d288dd41b7f6292e4228cdd0167f231572b78"
+          }
+        },
+        {
+          "client_id": "616392558134-mrv2eokjpn3u20n3sc8k2drvm9ns02ko.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBjXYra65d9JaD7q7X2e-cldeMmucLDFt8"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "616392558134-amoghd724ske1bqbq452otc4lfj4dfsq.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

@@ -13,7 +13,7 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
-  flutter_colorpicker: ^1.1.0
+  flutter_colorpicker: ^1.1.0  # for color picker functionality 
   curved_navigation_bar: ^1.0.6
   animations: ^2.0.11
   font_awesome_flutter: ^10.8.0 
@@ -25,18 +25,29 @@ dependencies:
   path: ^1.9.1
   shared_preferences: ^2.5.3
   google_fonts: ^6.2.1
-  timezone: ^0.10.1
-  awesome_notifications: ^0.10.1
-  riverpod: ^2.6.1
+
+  timezone: ^0.10.1 # for timezone handling
+
+  awesome_notifications: ^0.10.1 # for local notifications
+
   dots_indicator: ^4.0.1
   flutter_bloc: ^9.1.1
   local_auth: ^3.0.2
   firebase_core: ^4.12.1
+  firebase_auth: ^6.1.0
+  google_sign_in: ^6.3.0
 
+  connectivity_plus: ^7.3.0 # for checking internet connectivity
+
+  workmanager: ^0.9.0+3 # for background tasks
+
+  flutter_local_notifications: ^20.1.0
+
+
+#
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
   flutter_lints: ^5.0.0
 
 

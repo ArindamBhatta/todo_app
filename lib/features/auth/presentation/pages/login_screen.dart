@@ -13,42 +13,60 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  bool _obscurePassword = true;
-  bool _isLoading = false;
   final BiometricAuthService _biometricAuthService = BiometricAuthService();
 
+  bool _isLoading = false;
+  bool _isUnlockMode = false;
+
   @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    _prepareScreen();
   }
 
-  Future<void> _handleLogin() async {
-    if (!_formKey.currentState!.validate()) return;
+  Future<void> _prepareScreen() async {
+    final AuthManager authManager = context.read<AuthManager>();
+    final bool isLoggedIn = await authManager.isLoggedIn();
+    final bool isBiometricEnabled = await authManager.isBiometricEnabled();
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _isUnlockMode = isLoggedIn && isBiometricEnabled;
+    });
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    if (_isLoading) {
+      return;
+    }
 
     setState(() {
       _isLoading = true;
     });
 
     try {
-      // Simulate network request
-      await Future.delayed(const Duration(milliseconds: 1000));
-      await context.read<AuthManager>().login();
-      await _maybeEnableBiometric();
+      final AuthManager authManager = context.read<AuthManager>();
+      final bool success = await authManager.signInWithGoogle();
+      if (!success) {
+        _showMessage('Google sign-in was cancelled.');
+        return;
+      }
+
+      final bool enrolled = await _enforceMandatoryBiometricEnrollment();
+      if (!enrolled) {
+        await authManager.logout();
+        _showMessage('Biometric setup is required to continue.');
+        return;
+      }
 
       if (mounted) {
         context.go(AppRoutes.home);
       }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Login failed: ${e.toString()}')),
-        );
-      }
+    } catch (_) {
+      _showMessage('Sign-in failed. Please try again.');
     } finally {
       if (mounted) {
         setState(() {
@@ -58,373 +76,212 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Future<void> _maybeEnableBiometric() async {
-    final authManager = context.read<AuthManager>();
-    final bool alreadyEnabled = await authManager.isBiometricEnabled();
-    if (alreadyEnabled || !mounted) {
-      return;
+  Future<bool> _enforceMandatoryBiometricEnrollment() async {
+    final AuthManager authManager = context.read<AuthManager>();
+    final bool canUseBiometrics =
+        await _biometricAuthService.canUseBiometrics();
+
+    if (!canUseBiometrics) {
+      return false;
     }
 
-    final bool canUseBiometrics = await _biometricAuthService.canUseBiometrics();
-    if (!canUseBiometrics || !mounted) {
-      return;
+    if (!mounted) {
+      return false;
     }
 
-    final bool? shouldEnable = await showDialog<bool>(
+    final bool? proceed = await showDialog<bool>(
       context: context,
-      builder: (context) {
+      barrierDismissible: false,
+      builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Enable biometric login?'),
+          title: const Text('Enable biometric security'),
           content: const Text(
-            'Use fingerprint or face unlock next time for faster guest login.',
+            'Biometric authentication is required for every launch after sign-in.',
           ),
-          actions: [
+          actions: <Widget>[
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Not now'),
+              child: const Text('Cancel sign-in'),
             ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Enable'),
+              child: const Text('Continue'),
             ),
           ],
         );
       },
     );
 
-    if (shouldEnable != true || !mounted) {
-      return;
+    if (proceed != true) {
+      return false;
     }
 
     final bool authenticated = await _biometricAuthService.authenticate();
+    if (!authenticated) {
+      return false;
+    }
+
+    await authManager.setBiometricEnabled(true);
+    return true;
+  }
+
+  Future<void> _unlockWithBiometrics() async {
+    if (_isLoading) {
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final bool authenticated = await _biometricAuthService.authenticate();
+      if (authenticated) {
+        if (mounted) {
+          context.go(AppRoutes.home);
+        }
+      } else {
+        _showMessage('Authentication failed. The app remains locked.');
+      }
+    } catch (_) {
+      _showMessage('Unable to start biometric authentication.');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _showMessage(String message) {
     if (!mounted) {
       return;
     }
 
-    if (authenticated) {
-      await authManager.setBiometricEnabled(true);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Biometric login enabled.')),
-        );
-      }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Biometric setup was not completed.')),
-      );
-    }
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC), // Slate 50
-      body: Stack(
-        children: [
-          // Background Blobs for consistent premium design
-          Positioned(
-            top: -60,
-            right: -60,
-            child: _GlowBlob(
-              size: 280,
-              color: const Color(0xFFDDD6FE), // Soft light violet
-            ),
-          ),
-          Positioned(
-            bottom: -80,
-            left: -80,
-            child: _GlowBlob(
-              size: 320,
-              color: const Color(0xFFBFDBFE), // Soft light blue
-            ),
-          ),
-
-          SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 28.0),
-                child: Form(
-                  key: _formKey,
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                elevation: 0,
+                color: Colors.white,
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // App logo / icon placeholder
-                      Center(
-                        child: Container(
-                          height: 72,
-                          width: 72,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF4F46E5), // Indigo 600
-                            borderRadius: BorderRadius.circular(22),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF4F46E5).withOpacity(0.3),
-                                blurRadius: 15,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.check_circle_outline_rounded,
-                            color: Colors.white,
-                            size: 40,
-                          ),
+                    children: <Widget>[
+                      const Icon(
+                        Icons.lock_person_outlined,
+                        size: 52,
+                        color: Color(0xFF4F46E5),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        _isUnlockMode
+                            ? 'Biometric Unlock Required'
+                            : 'Sign in with Google',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        _isUnlockMode
+                            ? 'You are already signed in. Authenticate to continue.'
+                            : 'First launch requires Google sign-in and biometric enrollment.',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF64748B),
+                          height: 1.4,
                         ),
                       ),
                       const SizedBox(height: 24),
-
-                      // Welcome Texts
-                      const Text(
-                        'Welcome Back!',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF0F172A), // Slate 900
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Login to manage your tasks and projects',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF64748B), // Slate 500
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 36),
-
-                      // Email Field
-                      const Text(
-                        'Email Address',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF334155), // Slate 700
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        decoration: InputDecoration(
-                          hintText: 'hello@example.com',
-                          hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
-                          prefixIcon: const Icon(
-                            Icons.mail_outline_rounded,
-                            color: Color(0xFF64748B),
-                          ),
-                          filled: true,
-                          fillColor: Colors.white,
-                          contentPadding: const EdgeInsets.symmetric(
-                            vertical: 16,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide.none,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: const BorderSide(
-                              color: Color(0xFF4F46E5),
-                              width: 1.5,
-                            ),
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter your email';
-                          }
-                          if (!RegExp(
-                            r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                          ).hasMatch(value)) {
-                            return 'Please enter a valid email address';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Password Field
-                      const Text(
-                        'Password',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF334155),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: _passwordController,
-                        obscureText: _obscurePassword,
-                        decoration: InputDecoration(
-                          hintText: '••••••••',
-                          hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
-                          prefixIcon: const Icon(
-                            Icons.lock_outline_rounded,
-                            color: Color(0xFF64748B),
-                          ),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
-                              color: const Color(0xFF64748B),
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _obscurePassword = !_obscurePassword;
-                              });
-                            },
-                          ),
-                          filled: true,
-                          fillColor: Colors.white,
-                          contentPadding: const EdgeInsets.symmetric(
-                            vertical: 16,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide.none,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: const BorderSide(
-                              color: Color(0xFF4F46E5),
-                              width: 1.5,
-                            ),
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter your password';
-                          }
-                          if (value.length < 6) {
-                            return 'Password must be at least 6 characters';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 12),
-
-                      // Forgot password placeholder
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: () {},
-                          child: const Text(
-                            'Forgot Password?',
-                            style: TextStyle(
-                              color: Color(0xFF4F46E5),
-                              fontWeight: FontWeight.w600,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Login Button
                       SizedBox(
-                        height: 56,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _handleLogin,
+                        height: 52,
+                        child: ElevatedButton.icon(
+                          onPressed:
+                              _isLoading
+                                  ? null
+                                  : _isUnlockMode
+                                  ? _unlockWithBiometrics
+                                  : _handleGoogleSignIn,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF4F46E5),
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(14),
                             ),
-                            elevation: 0,
                           ),
-                          child:
+                          icon:
                               _isLoading
                                   ? const SizedBox(
-                                    height: 24,
-                                    width: 24,
+                                    width: 20,
+                                    height: 20,
                                     child: CircularProgressIndicator(
+                                      strokeWidth: 2,
                                       color: Colors.white,
-                                      strokeWidth: 2.5,
                                     ),
                                   )
-                                  : const Text(
-                                    'Login',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                  : Icon(
+                                    _isUnlockMode
+                                        ? Icons.fingerprint_rounded
+                                        : Icons.login_rounded,
                                   ),
+                          label: Text(
+                            _isUnlockMode
+                                ? 'Unlock with biometrics'
+                                : 'Continue with Google',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                            ),
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 24),
-
-                      // Don't have an account
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Text(
-                            "Don't have an account? ",
-                            style: TextStyle(
-                              color: Color(0xFF64748B),
-                              fontSize: 14,
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () {},
-                            child: const Text(
-                              'Sign Up',
-                              style: TextStyle(
-                                color: Color(0xFF4F46E5),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                      if (_isUnlockMode) ...<Widget>[
+                        const SizedBox(height: 12),
+                        TextButton(
+                          onPressed:
+                              _isLoading
+                                  ? null
+                                  : () async {
+                                    await context.read<AuthManager>().logout();
+                                    if (!mounted) {
+                                      return;
+                                    }
+                                    setState(() {
+                                      _isUnlockMode = false;
+                                    });
+                                  },
+                          child: const Text('Use another Google account'),
+                        ),
+                      ],
                     ],
                   ),
                 ),
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _GlowBlob extends StatelessWidget {
-  final double size;
-  final Color color;
-
-  const _GlowBlob({required this.size, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: RadialGradient(
-          colors: [
-            color.withOpacity(0.3),
-            color.withOpacity(0.1),
-            color.withOpacity(0),
-          ],
-          stops: const [0.0, 0.6, 1.0],
         ),
       ),
     );

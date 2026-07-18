@@ -6,15 +6,25 @@ class AuthManager extends Cubit<bool> {
 
   AuthManager(this._repository) : super(false);
 
-  Future<void> login() async {
-    await _repository.setLoggedIn(true);
-    emit(true);
+  Future<void> syncAuthState() async {
+    final bool isLoggedIn = await _repository.isLoggedIn();
+    emit(isLoggedIn);
+  }
+
+  Future<bool> signInWithGoogle() async {
+    final bool isLoggedIn = await _repository.signInWithGoogle();
+    if (isLoggedIn) {
+      emit(true);
+    }
+    return isLoggedIn;
   }
 
   Future<void> logout() async {
-    await _repository.setLoggedIn(false);
+    await _repository.signOut();
     emit(false);
   }
+
+  Future<bool> isLoggedIn() => _repository.isLoggedIn();
 
   Future<bool> isBiometricEnabled() => _repository.isBiometricEnabled();
 
