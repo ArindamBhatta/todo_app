@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:todo/features/add_todo/add_todo_page.dart';
 import 'package:todo/features/splash/page/splash_screen.dart';
@@ -15,6 +16,7 @@ abstract final class AppRoutes {
   static const login = '/login';
   static const home = '/home';
   static const addTodo = '/add-todo';
+  static const verifyingBiometric = '/verifying-biometric';
   static String homeWithTab(HomeTab tab) => '$home?tab=${tab.queryValue}';
 }
 
@@ -48,6 +50,14 @@ GoRouter createAppRouter({required SplashManager splashManager}) {
       GoRoute(
         path: AppRoutes.addTodo,
         builder: (context, state) => const AddTodoPage(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.verifyingBiometric,
+        builder:
+            (context, state) => const Scaffold(
+              body: Center(child: Text('Verifying Biometric')),
+            ),
       ),
     ],
 

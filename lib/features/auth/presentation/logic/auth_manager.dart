@@ -1,27 +1,36 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../data/models/auth_user.dart';
 import '../../data/repositories/auth_repository.dart';
+import 'auth_state.dart';
 
-class AuthManager extends Cubit<bool> {
+class AuthManager extends Cubit<AuthState> {
   final AuthRepository _repository;
 
-  AuthManager(this._repository) : super(false);
+  AuthManager(this._repository) : super(const AuthUnauthenticated());
 
   Future<void> syncAuthState() async {
-    final bool isLoggedIn = await _repository.isLoggedIn();
-    emit(isLoggedIn);
+    final AuthUser? user = _repository.getCurrentUser();
+    if (user != null) {
+      emit(AuthAuthenticated(user));
+    } else {
+      emit(const AuthUnauthenticated());
+    }
   }
 
   Future<bool> signInWithGoogle() async {
     final bool isLoggedIn = await _repository.signInWithGoogle();
     if (isLoggedIn) {
-      emit(true);
+      final AuthUser? user = _repository.getCurrentUser();
+      if (user != null) {
+        emit(AuthAuthenticated(user));
+      }
     }
     return isLoggedIn;
   }
 
   Future<void> logout() async {
     await _repository.signOut();
-    emit(false);
+    emit(const AuthUnauthenticated());
   }
 
   Future<bool> isLoggedIn() => _repository.isLoggedIn();

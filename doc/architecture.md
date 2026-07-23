@@ -7,8 +7,8 @@ It is based on Flutter’s official app-architecture guidance:
 - Design patterns: https://docs.flutter.dev/app-architecture/design-patterns
 - Recommendations: https://docs.flutter.dev/app-architecture/recommendations
 
-The repo uses **riverpod** (`flutter_riverpod`) for UI logic and state.
-In Flutter’s MVVM terms, you can treat a **Riverpod Notifier as the ViewModel**.
+The repo uses **Cubit**  for UI logic and state.
+In Flutter’s MVVM terms, you can treat a **Cubit Notifier as the ViewModel**.
 
 ---
 
@@ -16,7 +16,7 @@ In Flutter’s MVVM terms, you can treat a **Riverpod Notifier as the ViewModel*
 
 ### Separation of concerns (strongly recommended)
 - **Widgets are “dumb”**: UI code should render state and forward user intent.
-- **UI logic lives outside widgets** (in Riverpod Notifiers/Providers).
+- **UI logic lives outside widgets** (in Cubits).
 - **Business/data logic lives in repositories**.
 - **I/O lives in services/datasources**.
 
@@ -26,7 +26,7 @@ In Flutter’s MVVM terms, you can treat a **Riverpod Notifier as the ViewModel*
 
 ### Dependency direction (strongly recommended)
 - UI depends on providers/notifiers (and optionally domain/use-cases).
-- Providers depend on repositories.
+- Cubits depend on repositories.
 - Repositories depend on datasources/services.
 - Services depend on external APIs (SQLite, etc.).
 - Avoid circular dependencies and cross-feature “reach-ins”.
@@ -46,7 +46,7 @@ Flutter architecture guide recommends:
 In this repo:
 
 - **View** → `lib/features/<feature>/presentation/page/*` (and `presentation/widgets/*`)
-- **ViewModel** → `lib/features/<feature>/presentation/logic/*` (Riverpod notifiers/providers)
+- **ViewModel** → `lib/features/<feature>/presentation/logic/*` (Cubit notifiers/providers)
 - **Repository** → `lib/data/` (or `lib/features/<feature>/data/repositories/*` for feature-specific repos)
 - **Service/Datasource** → `lib/data/` (or `lib/features/<feature>/data/datasources/*` for local/remote services)
 - **Domain layer (optional)** → `lib/features/<feature>/domain/*_usecase.dart`
@@ -56,7 +56,7 @@ In this repo:
 ## 3) Project structure conventions
 
 ### Top level
-- `lib/main.dart` is the **composition root** (app setup wrapped in `ProviderScope` + dependency wiring).
+- `lib/main.dart` is the **composition root** (app setup wrapped in `BlocProvider` + dependency wiring).
 - `lib/core/` contains cross-cutting utilities and shared UI widgets (like `scrollable_tab_bar.dart`).
 - `lib/features/<feature_name>/` is the unit of modularity.
 
@@ -76,7 +76,7 @@ lib/features/<feature>/
     <use_case>.dart
   presentation/
     logic/
-      <feature>_manager.dart  (Riverpod Notifiers & providers)
+      <feature>_manager.dart  (Cubit Notifiers & providers)
     page/
       <feature>_page.dart (or *_screen.dart)
     widgets/
@@ -94,7 +94,7 @@ Notes:
 ### Views (widgets/pages)
 Views should contain only:
 - Layout and styling.
-- Simple branching (`if`/`switch` or Riverpod's `state.when()`) to show/hide UI based on state.
+- Simple branching (`if`/`switch` or Cubit's `emit()` method) to show/hide UI based on state.
 - Animation logic.
 - Basic routing calls (`Navigator.*` or a routing abstraction like `go_router`).
 

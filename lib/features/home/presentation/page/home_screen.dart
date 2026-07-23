@@ -1,9 +1,12 @@
 import 'dart:math' as math;
+import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:todo/data/todo.dart';
+import 'package:todo/features/auth/presentation/logic/auth_manager.dart';
+import 'package:todo/features/auth/presentation/logic/auth_state.dart';
 import 'package:todo/features/home/presentation/logic/todo_manager.dart';
-import 'package:intl/intl.dart';
+import 'package:todo/features/home/presentation/page/details_page.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
 
 class CategoryStyle {
@@ -228,92 +231,255 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _showTaskDetailsDialog(BuildContext context, ElementTask task) {
-    showDialog(
-      context: context,
-      builder:
-          (ctx) => AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+  Widget _buildProfileHeader() {
+    return BlocBuilder<AuthManager, AuthState>(
+      builder: (context, authState) {
+        final String displayName = authState is AuthAuthenticated
+            ? authState.user.displayName
+            : 'Guest';
+        final String? photoUrl = authState is AuthAuthenticated
+            ? authState.user.photoUrl
+            : null;
+
+        return Row(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: CircleAvatar(
+                radius: 26,
+                backgroundColor: const Color(0xFFE2E8F0),
+                backgroundImage:
+                    photoUrl != null ? NetworkImage(photoUrl) : null,
+                child: photoUrl == null
+                    ? const Icon(
+                        Icons.person_rounded,
+                        color: Color(0xFF4F46E5),
+                        size: 28,
+                      )
+                    : null,
+              ),
             ),
-            title: Text(
-              task.name,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Hello!',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: const Color(0xFF64748B),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    displayName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: const Color(0xFF0F172A),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+            Stack(
+              alignment: Alignment.topRight,
               children: [
-                _detailRow(Icons.category, 'Category', task.category),
-                _detailRow(Icons.priority_high, 'Urgency', task.urgencyLevel),
-                _detailRow(
-                  Icons.access_time,
-                  'Start Time',
-                  DateFormat('MMM d, yyyy h:mm a').format(task.startTime),
+                IconButton(
+                  onPressed: () async {
+                    final isAllowed =
+                        await AwesomeNotifications().isNotificationAllowed();
+                    if (!isAllowed) {
+                      await AwesomeNotifications()
+                          .requestPermissionToSendNotifications()
+                          .then((allowed) {
+                        if (!allowed) {
+                          AwesomeNotifications().showNotificationConfigPage();
+                        }
+                      });
+                    } else {
+                      await AwesomeNotifications().createNotification(
+                        content: NotificationContent(
+                          id: 9999,
+                          channelKey: 'urgent_important_channel',
+                          title: '🔔 Notification System Active!',
+                          body:
+                              'Local notifications are active and ready for Urgent Important tasks.',
+                          notificationLayout: NotificationLayout.Default,
+                        ),
+                      );
+                    }
+                  },
+                  icon: const Icon(
+                    Icons.notifications_rounded,
+                    color: Color(0xFF0F172A),
+                    size: 26,
+                  ),
                 ),
-                _detailRow(
-                  Icons.alarm,
-                  'Desired Deadline',
-                  DateFormat('MMM d, yyyy h:mm a').format(task.desireDeadline),
-                ),
-                _detailRow(
-                  Icons.dangerous,
-                  'Absolute Deadline',
-                  DateFormat(
-                    'MMM d, yyyy h:mm a',
-                  ).format(task.absoluteDeadline),
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF5E42EB),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
                 ),
               ],
             ),
-            actions: [
-              TextButton(
-                onPressed: () async {
-                  await ctx.read<TaskManager>().deleteTask(task.id);
-                  if (ctx.mounted) Navigator.pop(ctx);
-                },
-                child: const Text(
-                  'Delete',
-                  style: TextStyle(color: Colors.red),
-                ),
-              ),
-              FilledButton(
-                onPressed: () async {
-                  await ctx.read<TaskManager>().toggleTaskStatus(task.id);
-                  if (ctx.mounted) Navigator.pop(ctx);
-                },
-                style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF4F46E5),
-                ),
-                child: Text(task.isPending ? 'Complete' : 'Reopen'),
-              ),
-            ],
-          ),
+          ],
+        );
+      },
     );
   }
 
-  Widget _detailRow(IconData icon, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
-      child: Row(
-        children: [
-          Icon(icon, size: 16, color: const Color(0xFF64748B)),
-          const SizedBox(width: 8),
-          Text(
-            '$label: ',
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
-              color: Color(0xFF475569),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A)),
-            ),
-          ),
-        ],
+  Widget _buildTaskCard({
+    required ElementTask task,
+    required CategoryStyle style,
+    required double progress,
+    required bool isUrgentImportant,
+  }) {
+    return OpenContainer<void>(
+      closedElevation: 0,
+      openElevation: 0,
+      transitionDuration: const Duration(milliseconds: 450),
+      closedColor: Colors.transparent,
+      openColor: const Color(0xFFF8FAFC),
+      closedShape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
       ),
+      openShape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(20)),
+      ),
+      closedBuilder: (context, openContainer) {
+        return GestureDetector(
+          onTap: openContainer,
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: style.backgroundColor,
+              borderRadius: BorderRadius.circular(20),
+              border: isUrgentImportant
+                  ? Border.all(color: const Color(0xFFEF4444), width: 1.5)
+                  : null,
+              image: DecorationImage(
+                image: AssetImage(
+                  categoryImageMap[task.category] ?? 'assets/Personal.jpg',
+                ),
+                fit: BoxFit.cover,
+                colorFilter: ColorFilter.mode(
+                  Colors.black.withValues(alpha: 0.55),
+                  BlendMode.darken,
+                ),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: isUrgentImportant
+                      ? const Color(0xFFEF4444).withValues(alpha: 0.25)
+                      : style.progressColor.withValues(alpha: 0.05),
+                  blurRadius: isUrgentImportant ? 14 : 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              style.label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white70,
+                              ),
+                            ),
+                          ),
+                          if (isUrgentImportant) ...[
+                            const SizedBox(width: 4),
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFEF4444),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.25),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        style.icon,
+                        size: 12,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Expanded(
+                  child: Text(
+                    task.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 4,
+                    backgroundColor: Colors.white.withValues(alpha: 0.3),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      isUrgentImportant
+                          ? const Color(0xFFEF4444)
+                          : style.progressColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+      openBuilder: (context, _) => DetailsPage(task: task),
     );
   }
 
@@ -346,110 +512,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // 1. Profile Header
-                  Row(
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.08),
-                              blurRadius: 8,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: CircleAvatar(
-                          radius: 26,
-                          backgroundColor: const Color(0xFFE2E8F0),
-                          child: ClipOval(
-                            child: Image.network(
-                              'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
-                              width: 52,
-                              height: 52,
-                              fit: BoxFit.cover,
-                              errorBuilder:
-                                  (context, error, stackTrace) => const Icon(
-                                    Icons.person_rounded,
-                                    color: Color(0xFF4F46E5),
-                                    size: 28,
-                                  ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Hello!',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: const Color(0xFF64748B),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'Livia Vaccaro',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: const Color(0xFF0F172A),
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      // Notification Bell
-                      Stack(
-                        alignment: Alignment.topRight,
-                        children: [
-                          IconButton(
-                            onPressed: () async {
-                              final isAllowed = await AwesomeNotifications().isNotificationAllowed();
-                              if (!isAllowed) {
-                                await AwesomeNotifications().requestPermissionToSendNotifications().then((allowed) {
-                                  if (!allowed) {
-                                    AwesomeNotifications().showNotificationConfigPage();
-                                  }
-                                });
-                              } else {
-                                await AwesomeNotifications().createNotification(
-                                  content: NotificationContent(
-                                    id: 9999,
-                                    channelKey: 'urgent_important_channel',
-                                    title: '🔔 Notification System Active!',
-                                    body: 'Local notifications are active and ready for Urgent Important tasks.',
-                                    notificationLayout: NotificationLayout.Default,
-                                  ),
-                                );
-                              }
-                            },
-                            icon: const Icon(
-                              Icons.notifications_rounded,
-                              color: Color(0xFF0F172A),
-                              size: 26,
-                            ),
-                          ),
-                          Positioned(
-                            top: 10,
-                            right: 10,
-                            child: Container(
-                              width: 8,
-                              height: 8,
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF5E42EB),
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                  _buildProfileHeader(),
                   const SizedBox(height: 24),
 
                   // 2. Banner Card
@@ -628,115 +691,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
                         return ShakeWidget(
                           shake: isUrgentImportant,
-                          child: GestureDetector(
-                            onTap: () => _showTaskDetailsDialog(context, task),
-                            child: Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: style.backgroundColor,
-                                borderRadius: BorderRadius.circular(20),
-                                border: isUrgentImportant
-                                    ? Border.all(color: const Color(0xFFEF4444), width: 1.5)
-                                    : null,
-                                image: DecorationImage(
-                                  image: AssetImage(
-                                    categoryImageMap[task.category] ?? 'assets/Personal.jpg',
-                                  ),
-                                  fit: BoxFit.cover,
-                                  colorFilter: ColorFilter.mode(
-                                    Colors.black.withValues(alpha: 0.55),
-                                    BlendMode.darken,
-                                  ),
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: isUrgentImportant
-                                        ? const Color(0xFFEF4444).withValues(alpha: 0.25)
-                                        : style.progressColor.withValues(alpha: 0.05),
-                                    blurRadius: isUrgentImportant ? 14 : 10,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Expanded(
-                                        child: Row(
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                style.label,
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: const TextStyle(
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: Colors.white70,
-                                                ),
-                                              ),
-                                            ),
-                                            if (isUrgentImportant) ...[
-                                              const SizedBox(width: 4),
-                                              Container(
-                                                width: 6,
-                                                height: 6,
-                                                decoration: const BoxDecoration(
-                                                  color: Color(0xFFEF4444),
-                                                  shape: BoxShape.circle,
-                                                ),
-                                              ),
-                                            ],
-                                          ],
-                                        ),
-                                      ),
-                                      Container(
-                                        padding: const EdgeInsets.all(6),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withValues(alpha: 0.25),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Icon(
-                                          style.icon,
-                                          size: 12,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Expanded(
-                                    child: Text(
-                                      task.name,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  // Progress Bar
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(4),
-                                    child: LinearProgressIndicator(
-                                      value: progress,
-                                      minHeight: 4,
-                                      backgroundColor: Colors.white.withValues(alpha: 0.3),
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        isUrgentImportant ? const Color(0xFFEF4444) : style.progressColor,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                          child: _buildTaskCard(
+                            task: task,
+                            style: style,
+                            progress: progress,
+                            isUrgentImportant: isUrgentImportant,
                           ),
                         );
                       },

@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:todo/features/auth/data/models/auth_user.dart';
 
 //SHA stands for Secure Hash Algorithm.
 // The private signing key creates the digital signature on your APK.
@@ -15,10 +16,24 @@ class GoogleAuthDataSource {
 
   GoogleAuthDataSource({FirebaseAuth? firebaseAuth, GoogleSignIn? googleSignIn})
     : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
-      _googleSignIn = googleSignIn ?? GoogleSignIn(scopes: <String>['email']);
+      _googleSignIn =
+          googleSignIn ?? GoogleSignIn(scopes: <String>['email', 'profile']);
 
   bool isLoggedIn() {
     return _firebaseAuth.currentUser != null;
+  }
+
+  AuthUser? getCurrentUser() {
+    final User? user = _firebaseAuth.currentUser;
+    if (user == null) {
+      return null;
+    }
+
+    return AuthUser(
+      displayName: user.displayName ?? user.email ?? 'User',
+      photoUrl: user.photoURL,
+      email: user.email,
+    );
   }
 
   Future<bool> signInWithGoogle() async {
