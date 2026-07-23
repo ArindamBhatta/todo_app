@@ -2,10 +2,10 @@ import 'dart:math' as math;
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:todo/data/todo.dart';
+import 'package:todo/features/add_todo/data/todo.dart';
 import 'package:todo/features/auth/presentation/logic/auth_manager.dart';
 import 'package:todo/features/auth/presentation/logic/auth_state.dart';
-import 'package:todo/features/home/presentation/logic/todo_manager.dart';
+import 'package:todo/features/home/presentation/logic/todo_cubit.dart';
 import 'package:todo/features/home/presentation/page/details_page.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
 
@@ -114,17 +114,14 @@ class ShakeWidget extends StatefulWidget {
   final Widget child;
   final bool shake;
 
-  const ShakeWidget({
-    required this.child,
-    required this.shake,
-    super.key,
-  });
+  const ShakeWidget({required this.child, required this.shake, super.key});
 
   @override
   State<ShakeWidget> createState() => _ShakeWidgetState();
 }
 
-class _ShakeWidgetState extends State<ShakeWidget> with SingleTickerProviderStateMixin {
+class _ShakeWidgetState extends State<ShakeWidget>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
 
   @override
@@ -170,10 +167,7 @@ class _ShakeWidgetState extends State<ShakeWidget> with SingleTickerProviderStat
 
         return Transform.translate(
           offset: Offset(offset, 0),
-          child: Transform.rotate(
-            angle: rotation,
-            child: child,
-          ),
+          child: Transform.rotate(angle: rotation, child: child),
         );
       },
       child: widget.child,
@@ -201,31 +195,33 @@ class _HomeScreenState extends State<HomeScreen> {
       if (!isAllowed) {
         showDialog(
           context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('Enable Notifications'),
-            content: const Text(
-              'To get alerts for Urgent and Important tasks, please allow notifications in settings.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Later'),
+          builder:
+              (ctx) => AlertDialog(
+                title: const Text('Enable Notifications'),
+                content: const Text(
+                  'To get alerts for Urgent and Important tasks, please allow notifications in settings.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('Later'),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      AwesomeNotifications()
+                          .requestPermissionToSendNotifications()
+                          .then((allowed) {
+                            if (!allowed) {
+                              AwesomeNotifications()
+                                  .showNotificationConfigPage();
+                            }
+                          });
+                    },
+                    child: const Text('Allow'),
+                  ),
+                ],
               ),
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  AwesomeNotifications()
-                      .requestPermissionToSendNotifications()
-                      .then((allowed) {
-                    if (!allowed) {
-                      AwesomeNotifications().showNotificationConfigPage();
-                    }
-                  });
-                },
-                child: const Text('Allow'),
-              ),
-            ],
-          ),
         );
       }
     });
@@ -234,12 +230,12 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildProfileHeader() {
     return BlocBuilder<AuthManager, AuthState>(
       builder: (context, authState) {
-        final String displayName = authState is AuthAuthenticated
-            ? authState.user.displayName
-            : 'Guest';
-        final String? photoUrl = authState is AuthAuthenticated
-            ? authState.user.photoUrl
-            : null;
+        final String displayName =
+            authState is AuthAuthenticated
+                ? authState.user.displayName
+                : 'Guest';
+        final String? photoUrl =
+            authState is AuthAuthenticated ? authState.user.photoUrl : null;
 
         return Row(
           children: [
@@ -259,13 +255,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 backgroundColor: const Color(0xFFE2E8F0),
                 backgroundImage:
                     photoUrl != null ? NetworkImage(photoUrl) : null,
-                child: photoUrl == null
-                    ? const Icon(
-                        Icons.person_rounded,
-                        color: Color(0xFF4F46E5),
-                        size: 28,
-                      )
-                    : null,
+                child:
+                    photoUrl == null
+                        ? const Icon(
+                          Icons.person_rounded,
+                          color: Color(0xFF4F46E5),
+                          size: 28,
+                        )
+                        : null,
               ),
             ),
             const SizedBox(width: 14),
@@ -306,10 +303,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       await AwesomeNotifications()
                           .requestPermissionToSendNotifications()
                           .then((allowed) {
-                        if (!allowed) {
-                          AwesomeNotifications().showNotificationConfigPage();
-                        }
-                      });
+                            if (!allowed) {
+                              AwesomeNotifications()
+                                  .showNotificationConfigPage();
+                            }
+                          });
                     } else {
                       await AwesomeNotifications().createNotification(
                         content: NotificationContent(
@@ -375,9 +373,10 @@ class _HomeScreenState extends State<HomeScreen> {
             decoration: BoxDecoration(
               color: style.backgroundColor,
               borderRadius: BorderRadius.circular(20),
-              border: isUrgentImportant
-                  ? Border.all(color: const Color(0xFFEF4444), width: 1.5)
-                  : null,
+              border:
+                  isUrgentImportant
+                      ? Border.all(color: const Color(0xFFEF4444), width: 1.5)
+                      : null,
               image: DecorationImage(
                 image: AssetImage(
                   categoryImageMap[task.category] ?? 'assets/Personal.jpg',
@@ -390,9 +389,10 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: isUrgentImportant
-                      ? const Color(0xFFEF4444).withValues(alpha: 0.25)
-                      : style.progressColor.withValues(alpha: 0.05),
+                  color:
+                      isUrgentImportant
+                          ? const Color(0xFFEF4444).withValues(alpha: 0.25)
+                          : style.progressColor.withValues(alpha: 0.05),
                   blurRadius: isUrgentImportant ? 14 : 10,
                   offset: const Offset(0, 4),
                 ),
@@ -439,11 +439,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: Colors.white.withValues(alpha: 0.25),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(
-                        style.icon,
-                        size: 12,
-                        color: Colors.white,
-                      ),
+                      child: Icon(style.icon, size: 12, color: Colors.white),
                     ),
                   ],
                 ),
@@ -488,17 +484,21 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
-        child: BlocBuilder<TaskManager, TaskState>(
+        child: BlocBuilder<TodoCubit, TodoState>(
           builder: (context, state) {
-            if (state is TaskLoading) {
+            if (state is TodoLoading) {
               return const Center(
                 child: CircularProgressIndicator(color: Color(0xFF5E42EB)),
               );
             }
             if (state is TaskError) {
-              return Center(child: Text('Failed to load tasks: ${state.message}'));
+              debugPrint(' 📝 📝 📝 ${state.message}');
+              return Center(
+                child: Text('Failed to load tasks: ${state.message}'),
+              );
             }
-            final tasks = (state as TaskLoaded).tasks;
+            final tasks = (state as TodoLoaded).tasks;
+
             final totalTasks = tasks.length;
             final completedTasks = tasks.where((t) => !t.isPending).length;
             final inProgressTasks = tasks.where((t) => t.isPending).toList();
@@ -677,9 +677,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                         // Calculate time elapsed ratio
                         final totalDuration =
-                            task.absoluteDeadline
-                                .difference(task.startTime)
-                                .inMinutes;
+                            task.endTime.difference(task.startTime).inMinutes;
                         final elapsed =
                             DateTime.now().difference(task.startTime).inMinutes;
                         double progress = 0.5;
@@ -687,7 +685,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           progress = (elapsed / totalDuration).clamp(0.1, 0.9);
                         }
 
-                        final isUrgentImportant = task.urgencyLevel == 'Urgent Important';
+                        final isUrgentImportant =
+                            task.urgencyLevel == 'Urgent Important';
 
                         return ShakeWidget(
                           shake: isUrgentImportant,

@@ -58,76 +58,70 @@ final Map<String, String> categoryImageMap = {
 
 class ElementTask {
   final String id;
-  final bool isPending;
-  final String urgencyLevel;
   final String category;
   final String name;
+  final String description;
   final DateTime startTime;
-  final Color color;
-  final DateTime absoluteDeadline;
-  final DateTime desireDeadline;
+  final DateTime endTime;
+  final String urgencyLevel;
+  final bool isPending;
 
   ElementTask({
     String? id,
-    required this.isPending,
-    required this.urgencyLevel,
     required this.category,
     required this.name,
-    required this.color,
+    required this.description,
     required this.startTime,
-    required this.absoluteDeadline,
-    required this.desireDeadline,
+    required this.endTime,
+    required this.urgencyLevel,
+    required this.isPending,
   }) : id = id ?? uuid.v4();
 
   ElementTask copyWith({
     String? id,
-    bool? isPending,
-    String? urgencyLevel,
     String? category,
     String? name,
+    String? description,
     DateTime? startTime,
-    Color? color,
-    DateTime? absoluteDeadline,
-    DateTime? desireDeadline,
+    DateTime? endTime,
+    String? urgencyLevel,
+    bool? isPending,
   }) {
     return ElementTask(
       id: id ?? this.id,
-      isPending: isPending ?? this.isPending,
-      urgencyLevel: urgencyLevel ?? this.urgencyLevel,
       category: category ?? this.category,
       name: name ?? this.name,
-      color: color ?? this.color,
+      description: description ?? this.description,
       startTime: startTime ?? this.startTime,
-      absoluteDeadline: absoluteDeadline ?? this.absoluteDeadline,
-      desireDeadline: desireDeadline ?? this.desireDeadline,
+      endTime: endTime ?? this.endTime,
+      urgencyLevel: urgencyLevel ?? this.urgencyLevel,
+      isPending: isPending ?? this.isPending,
     );
   }
 
-  Map<String, Object?> toMap() {
+  Map<String, Object?> toJson() {
     return {
       'id': id,
-      'is_pending': isPending ? 1 : 0,
-      'urgency_level': urgencyLevel,
       'category': category,
       'name': name,
-      'color': color.value,
+      'description': description,
       'start_time': startTime.toIso8601String(),
-      'absolute_deadline': absoluteDeadline.toIso8601String(),
-      'desire_deadline': desireDeadline.toIso8601String(),
+      'end_time': endTime.toIso8601String(),
+      'urgency_level': urgencyLevel,
+      'is_pending': isPending ? 1 : 0,
     };
   }
 
-  factory ElementTask.fromMap(Map<String, Object?> map) {
+  factory ElementTask.fromJson(Map<String, Object?> json) {
     return ElementTask(
-      id: map['id']! as String,
-      isPending: (map['is_pending'] as num).toInt() == 1,
-      urgencyLevel: map['urgency_level']! as String,
-      category: map['category']! as String,
-      name: map['name']! as String,
-      color: Color((map['color']! as num).toInt()),
-      startTime: DateTime.parse(map['start_time']! as String),
-      absoluteDeadline: DateTime.parse(map['absolute_deadline']! as String),
-      desireDeadline: DateTime.parse(map['desire_deadline']! as String),
+      id: json['id']! as String,
+      category: json['category']! as String,
+      name: json['name']! as String,
+      description: json['description']! as String,
+      startTime: DateTime.parse(json['start_time']! as String),
+      endTime: DateTime.parse(json['end_time']! as String),
+      urgencyLevel: json['urgency_level']! as String,
+      isPending: (json['is_pending'] as num).toInt() == 1,
     );
   }
 }

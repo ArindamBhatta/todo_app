@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:todo/data/todo.dart';
-import 'package:todo/features/home/presentation/logic/todo_manager.dart';
+import 'package:todo/features/add_todo/data/todo.dart';
+import 'package:todo/features/home/presentation/logic/todo_cubit.dart';
 import 'package:todo/features/home/presentation/page/home_screen.dart';
 
 class DetailsPage extends StatelessWidget {
@@ -53,12 +53,13 @@ class DetailsPage extends StatelessWidget {
                             BlendMode.darken,
                           ),
                         ),
-                        border: isUrgentImportant
-                            ? Border.all(
-                                color: const Color(0xFFEF4444),
-                                width: 1.5,
-                              )
-                            : null,
+                        border:
+                            isUrgentImportant
+                                ? Border.all(
+                                  color: const Color(0xFFEF4444),
+                                  width: 1.5,
+                                )
+                                : null,
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -153,19 +154,13 @@ class DetailsPage extends StatelessWidget {
                         'MMM d, yyyy h:mm a',
                       ).format(task.startTime),
                     ),
-                    _detailCard(
-                      icon: Icons.alarm,
-                      label: 'Desired Deadline',
-                      value: DateFormat(
-                        'MMM d, yyyy h:mm a',
-                      ).format(task.desireDeadline),
-                    ),
+
                     _detailCard(
                       icon: Icons.dangerous,
                       label: 'Absolute Deadline',
                       value: DateFormat(
                         'MMM d, yyyy h:mm a',
-                      ).format(task.absoluteDeadline),
+                      ).format(task.endTime),
                     ),
                     const SizedBox(height: 28),
                     Row(
@@ -173,9 +168,9 @@ class DetailsPage extends StatelessWidget {
                         Expanded(
                           child: OutlinedButton.icon(
                             onPressed: () async {
-                              await context
-                                  .read<TaskManager>()
-                                  .deleteTask(task.id);
+                              await context.read<TodoCubit>().deleteTask(
+                                task.id,
+                              );
                               if (context.mounted) {
                                 Navigator.of(context).pop();
                               }
@@ -196,9 +191,9 @@ class DetailsPage extends StatelessWidget {
                         Expanded(
                           child: FilledButton.icon(
                             onPressed: () async {
-                              await context
-                                  .read<TaskManager>()
-                                  .toggleTaskStatus(task.id);
+                              await context.read<TodoCubit>().toggleTaskStatus(
+                                task.id,
+                              );
                               if (context.mounted) {
                                 Navigator.of(context).pop();
                               }
@@ -208,9 +203,7 @@ class DetailsPage extends StatelessWidget {
                                   ? Icons.check_rounded
                                   : Icons.undo_rounded,
                             ),
-                            label: Text(
-                              task.isPending ? 'Complete' : 'Reopen',
-                            ),
+                            label: Text(task.isPending ? 'Complete' : 'Reopen'),
                             style: FilledButton.styleFrom(
                               backgroundColor: const Color(0xFF4F46E5),
                               padding: const EdgeInsets.symmetric(vertical: 14),

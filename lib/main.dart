@@ -11,7 +11,7 @@ import 'package:todo/data/todo_repository.dart';
 import 'package:todo/features/auth/data/datasources/auth_local_datasource.dart';
 import 'package:todo/features/auth/data/repositories/auth_repository.dart';
 import 'package:todo/features/auth/presentation/logic/auth_manager.dart';
-import 'package:todo/features/home/presentation/logic/todo_manager.dart';
+import 'package:todo/features/home/presentation/logic/todo_cubit.dart';
 import 'package:todo/features/onboarding/data/datasources/onboarding_local_datasource.dart';
 import 'package:todo/features/onboarding/data/repositories/onboarding_repository.dart';
 import 'package:todo/features/onboarding/presentation/logic/onboarding_manager.dart';
@@ -41,7 +41,7 @@ class _TodoAppState extends State<TodoApp> {
   late final SplashManager _splashManager;
   late final AuthManager _authManager;
   late final OnboardingManager _onboardingManager;
-  late final TaskManager _taskManager;
+  late final TodoCubit _taskManager;
   late final ConnectivityManager _connectivityManager;
   late final GoRouter _router;
 
@@ -55,7 +55,7 @@ class _TodoAppState extends State<TodoApp> {
     _authManager = AuthManager(_authRepository);
     _onboardingManager = OnboardingManager(_onboardingRepository);
     _splashManager = SplashManager(onboardingRepository: _onboardingRepository);
-    _taskManager = TaskManager(TodoRepository());
+    _taskManager = TodoCubit(TodoRepository());
     _connectivityManager = ConnectivityManager()..startMonitoring();
     _router = createAppRouter(splashManager: _splashManager);
 
@@ -83,7 +83,7 @@ class _TodoAppState extends State<TodoApp> {
         BlocProvider<SplashManager>.value(value: _splashManager),
         BlocProvider<AuthManager>.value(value: _authManager),
         BlocProvider<OnboardingManager>.value(value: _onboardingManager),
-        BlocProvider<TaskManager>.value(value: _taskManager),
+        BlocProvider<TodoCubit>.value(value: _taskManager),
         BlocProvider<ConnectivityManager>.value(value: _connectivityManager),
       ],
       child: BlocListener<ConnectivityManager, ConnectivityStatus>(

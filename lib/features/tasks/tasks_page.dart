@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:todo/data/todo.dart';
-import 'package:todo/features/home/presentation/logic/todo_manager.dart';
+import 'package:todo/features/add_todo/data/todo.dart';
+import 'package:todo/features/home/presentation/logic/todo_cubit.dart';
 
 class TasksPage extends StatefulWidget {
   const TasksPage({super.key});
@@ -41,21 +41,14 @@ class _TasksPageState extends State<TasksPage> {
                 _detailRow(
                   Icons.alarm,
                   'Desired Deadline',
-                  DateFormat('MMM d, yyyy h:mm a').format(task.desireDeadline),
-                ),
-                _detailRow(
-                  Icons.dangerous,
-                  'Absolute Deadline',
-                  DateFormat(
-                    'MMM d, yyyy h:mm a',
-                  ).format(task.absoluteDeadline),
+                  DateFormat('MMM d, yyyy h:mm a').format(task.endTime),
                 ),
               ],
             ),
             actions: [
               TextButton(
                 onPressed: () async {
-                  await ctx.read<TaskManager>().deleteTask(task.id);
+                  await ctx.read<TodoCubit>().deleteTask(task.id);
                   if (ctx.mounted) Navigator.pop(ctx);
                 },
                 child: const Text(
@@ -271,9 +264,9 @@ class _TasksPageState extends State<TasksPage> {
           ),
         ],
       ),
-      body: BlocBuilder<TaskManager, TaskState>(
+      body: BlocBuilder<TodoCubit, TodoState>(
         builder: (context, state) {
-          if (state is TaskLoading) {
+          if (state is TodoLoading) {
             return const Center(
               child: CircularProgressIndicator(color: Color(0xFF4F46E5)),
             );
@@ -283,7 +276,7 @@ class _TasksPageState extends State<TasksPage> {
               child: Text('Failed to load tasks: ${state.message}'),
             );
           }
-          final tasks = (state as TaskLoaded).tasks;
+          final tasks = (state as TodoLoaded).tasks;
           final filteredTasks =
               tasks.where((task) {
                 final matchesCategory =
@@ -408,7 +401,7 @@ class _TasksPageState extends State<TasksPage> {
                           right: 0,
                           child: InkWell(
                             onTap: () {
-                              context.read<TaskManager>().toggleTaskStatus(
+                              context.read<TodoCubit>().toggleTaskStatus(
                                 task.id,
                               );
                             },

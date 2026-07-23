@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
-
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:todo/features/add_todo/data/todo.dart';
+import 'package:todo/features/home/presentation/logic/todo_cubit.dart';
 
 class AddTodoPage extends StatefulWidget {
   const AddTodoPage({super.key});
@@ -12,15 +15,27 @@ class AddTodoPage extends StatefulWidget {
 class _AddTodoPageState extends State<AddTodoPage> {
   final _formKey = GlobalKey<FormState>();
 
-  String taskGroup = 'Work';
-  String projectName = 'Grocery Shopping App';
-  String description =
-      'This application is designed for super shops. By using this application they can enlist all their products in one place and can deliver. Customers will get a one-stop solution for their daily shopping.';
+  String taskGroup = categoryImageMap.keys.first;
+  String projectName = '';
+  String description = '';
 
-  DateTime startDate = DateTime(2022, 5, 1);
-  DateTime endDate = DateTime(2022, 6, 30);
+  late DateTime startDate;
+  late DateTime endDate;
+  UrgencyLevel urgencyLevel = UrgencyLevel.urgentImportant;
 
-  // Helper method to create the floating white cards
+  @override
+  void initState() {
+    super.initState();
+    final today = _today();
+    startDate = today;
+    endDate = today;
+  }
+
+  DateTime _today() {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day);
+  }
+
   Widget _buildCard({required Widget child, EdgeInsetsGeometry? padding}) {
     return Container(
       width: double.infinity,
@@ -62,11 +77,222 @@ class _AddTodoPageState extends State<AddTodoPage> {
       setState(() {
         if (isStartDate) {
           startDate = picked;
+          if (endDate.isBefore(startDate)) {
+            endDate = picked;
+          }
         } else {
           endDate = picked;
         }
       });
     }
+  }
+
+  Future<void> _showCategoryPicker() async {
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Select Task Group',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF1E1E2D),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Flexible(
+                  child: GridView.builder(
+                    shrinkWrap: true,
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                          childAspectRatio: 0.85,
+                        ),
+                    itemCount: categoryImageMap.length,
+                    itemBuilder: (context, index) {
+                      final category = categoryImageMap.keys.elementAt(index);
+                      final imagePath = categoryImageMap[category]!;
+                      final isSelected = category == taskGroup;
+
+                      return InkWell(
+                        onTap: () => Navigator.pop(context, category),
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color:
+                                  isSelected
+                                      ? const Color(0xFF6B4EFF)
+                                      : const Color(0xFFE8EAF0),
+                              width: isSelected ? 2 : 1,
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              Expanded(
+                                child: ClipRRect(
+                                  borderRadius: const BorderRadius.vertical(
+                                    top: Radius.circular(14),
+                                  ),
+                                  child: Image.asset(
+                                    imagePath,
+                                    width: double.infinity,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                  horizontal: 4,
+                                ),
+                                child: Text(
+                                  category,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color:
+                                        isSelected
+                                            ? const Color(0xFF6B4EFF)
+                                            : const Color(0xFF1E1E2D),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (selected != null) {
+      setState(() => taskGroup = selected);
+    }
+  }
+
+  Future<void> _showUrgencyPicker() async {
+    final selected = await showModalBottomSheet<UrgencyLevel>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Select Urgency Level',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF1E1E2D),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ...UrgencyLevel.values.map((level) {
+                  final isSelected = level == urgencyLevel;
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color:
+                            isSelected
+                                ? const Color(0xFFF3F0FF)
+                                : const Color(0xFFF8F9FC),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        getIconData(level.value),
+                        color:
+                            isSelected
+                                ? const Color(0xFF6B4EFF)
+                                : const Color(0xFF8F93A4),
+                      ),
+                    ),
+                    title: Text(
+                      level.value,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color:
+                            isSelected
+                                ? const Color(0xFF6B4EFF)
+                                : const Color(0xFF1E1E2D),
+                      ),
+                    ),
+                    trailing:
+                        isSelected
+                            ? const Icon(
+                              Icons.check_circle_rounded,
+                              color: Color(0xFF6B4EFF),
+                            )
+                            : null,
+                    onTap: () => Navigator.pop(context, level),
+                  );
+                }),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (selected != null) {
+      setState(() => urgencyLevel = selected);
+    }
+  }
+
+  void _saveProject() {
+    if (!_formKey.currentState!.validate()) return;
+
+    final trimmedName = projectName.trim();
+    if (trimmedName.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a project name')),
+      );
+      return;
+    }
+
+    final task = ElementTask(
+      id: uuid.v4(),
+      name: trimmedName,
+      description: description,
+      startTime: startDate,
+      endTime: endDate,
+      category: taskGroup,
+      urgencyLevel: urgencyLevel.value,
+      isPending: true,
+    );
+
+    context.read<TodoCubit>().addTask(task);
+    context.pop();
   }
 
   @override
@@ -83,7 +309,7 @@ class _AddTodoPageState extends State<AddTodoPage> {
             color: Color(0xFF1E1E2D),
             size: 28,
           ),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => context.pop(),
         ),
         title: const Text(
           'Add Project',
@@ -122,7 +348,6 @@ class _AddTodoPageState extends State<AddTodoPage> {
         ],
       ),
       body: Container(
-        // Soft gradient background matching the UI
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -138,57 +363,55 @@ class _AddTodoPageState extends State<AddTodoPage> {
               physics: const BouncingScrollPhysics(),
               child: Column(
                 children: [
-                  // Task Group Picker
-                  _buildCard(
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFEBF3),
+                  GestureDetector(
+                    onTap: _showCategoryPicker,
+                    child: _buildCard(
+                      child: Row(
+                        children: [
+                          ClipRRect(
                             borderRadius: BorderRadius.circular(12),
+                            child: Image.asset(
+                              categoryImageMap[taskGroup]!,
+                              width: 48,
+                              height: 48,
+                              fit: BoxFit.cover,
+                            ),
                           ),
-                          child: const Icon(
-                            Icons.work_outline_rounded,
-                            color: Color(0xFFFF6492),
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Task Group',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Color(0xFF8F93A4),
-                                  fontWeight: FontWeight.w600,
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Task Group',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF8F93A4),
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                taskGroup,
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  color: Color(0xFF1E1E2D),
-                                  fontWeight: FontWeight.bold,
+                                const SizedBox(height: 4),
+                                Text(
+                                  taskGroup,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    color: Color(0xFF1E1E2D),
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                        const Icon(
-                          Icons.arrow_drop_down_rounded,
-                          color: Color(0xFF1E1E2D),
-                          size: 32,
-                        ),
-                      ],
+                          const Icon(
+                            Icons.arrow_drop_down_rounded,
+                            color: Color(0xFF1E1E2D),
+                            size: 32,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
 
-                  // Project Name Input
                   _buildCard(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 20,
@@ -213,17 +436,23 @@ class _AddTodoPageState extends State<AddTodoPage> {
                             fontWeight: FontWeight.w600,
                           ),
                           decoration: const InputDecoration(
+                            hintText: 'Enter project name',
                             isDense: true,
                             contentPadding: EdgeInsets.only(top: 8, bottom: 8),
                             border: InputBorder.none,
                           ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Project name is required';
+                            }
+                            return null;
+                          },
                           onChanged: (val) => projectName = val,
                         ),
                       ],
                     ),
                   ),
 
-                  // Description Input
                   _buildCard(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 20,
@@ -250,6 +479,7 @@ class _AddTodoPageState extends State<AddTodoPage> {
                             height: 1.5,
                           ),
                           decoration: const InputDecoration(
+                            hintText: 'Enter project description (optional)',
                             isDense: true,
                             contentPadding: EdgeInsets.only(top: 12, bottom: 8),
                             border: InputBorder.none,
@@ -260,7 +490,6 @@ class _AddTodoPageState extends State<AddTodoPage> {
                     ),
                   ),
 
-                  // Start Date Picker
                   GestureDetector(
                     onTap: () => _pickDate(true),
                     child: _buildCard(
@@ -313,7 +542,6 @@ class _AddTodoPageState extends State<AddTodoPage> {
                     ),
                   ),
 
-                  // End Date Picker
                   GestureDetector(
                     onTap: () => _pickDate(false),
                     child: _buildCard(
@@ -366,83 +594,60 @@ class _AddTodoPageState extends State<AddTodoPage> {
                     ),
                   ),
 
-                  // Logo Changer
-                  _buildCard(
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 50,
-                          height: 50,
-                          decoration: const BoxDecoration(
-                            color: Color(
-                              0xFF0F9D58,
-                            ), // Teal background for the mock logo
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Center(
-                            child: Text(
-                              'Grocery\nShop',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 8,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Grocery',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Color(0xFF0F9D58),
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Text(
-                                'shop',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Color(0xFFFF5722),
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () {},
-                          style: TextButton.styleFrom(
-                            backgroundColor: const Color(0xFFF3F0FF),
-                            foregroundColor: const Color(0xFF6B4EFF),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                            shape: RoundedRectangleBorder(
+                  GestureDetector(
+                    onTap: _showUrgencyPicker,
+                    child: _buildCard(
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFF4E5),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                          ),
-                          child: const Text(
-                            'Change Logo',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
+                            child: Icon(
+                              getIconData(urgencyLevel.value),
+                              color: const Color(0xFFF59E0B),
+                              size: 24,
                             ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Urgency Level',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF8F93A4),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  urgencyLevel.value,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    color: Color(0xFF1E1E2D),
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(
+                            Icons.arrow_drop_down_rounded,
+                            color: Color(0xFF1E1E2D),
+                            size: 32,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
 
                   const SizedBox(height: 16),
 
-                  // Add Project Button (Modeled after the CustomElevatedButton)
                   Container(
                     width: double.infinity,
                     height: 60,
@@ -465,11 +670,7 @@ class _AddTodoPageState extends State<AddTodoPage> {
                           borderRadius: BorderRadius.circular(20),
                         ),
                       ),
-                      onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          // Handle saving the project data here
-                        }
-                      },
+                      onPressed: _saveProject,
                       child: const Text(
                         'Add Project',
                         style: TextStyle(

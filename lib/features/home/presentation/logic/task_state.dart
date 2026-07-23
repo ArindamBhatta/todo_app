@@ -1,15 +1,17 @@
-part of 'todo_manager.dart';
+part of 'todo_cubit.dart';
 
-sealed class TaskState {}
+sealed class TodoState {}
 
-class TaskLoading extends TaskState {}
+class TodoLoading extends TodoState {}
 
-class TaskLoaded extends TaskState {
+class TodoLoaded extends TodoState {
   final List<ElementTask> tasks;
-  TaskLoaded(this.tasks);
+  TodoLoaded(this.tasks);
 }
 
-class TaskError extends TaskState {
-  final String message;
+class TodoEmpty extends TodoState {}
+
+class TaskError extends TodoState {
+  final String? message;
   TaskError(this.message);
 }
