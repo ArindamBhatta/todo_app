@@ -54,10 +54,7 @@ class _TodoAppState extends State<TodoApp> {
     _themeBloc = ThemeBloc(initialThemeMode: ThemeMode.light);
     _authManager = AuthManager(_authRepository);
     _onboardingManager = OnboardingManager(_onboardingRepository);
-    _splashManager = SplashManager(
-      onboardingRepository: _onboardingRepository,
-      authRepository: _authRepository,
-    );
+    _splashManager = SplashManager(onboardingRepository: _onboardingRepository);
     _taskManager = TaskManager(TodoRepository());
     _connectivityManager = ConnectivityManager()..startMonitoring();
     _router = createAppRouter(splashManager: _splashManager);

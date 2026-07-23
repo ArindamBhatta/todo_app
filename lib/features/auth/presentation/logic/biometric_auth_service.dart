@@ -6,27 +6,25 @@ class BiometricAuthService {
   BiometricAuthService({LocalAuthentication? localAuth})
     : _localAuth = localAuth ?? LocalAuthentication();
 
-  Future<bool> isBiometricAvailable() async {
+  Future<bool> canUseDeviceAuth() async {
     try {
-      final bool isSupported = await _localAuth.isDeviceSupported();
-      final List<BiometricType> biometrics =
-          await _localAuth.getAvailableBiometrics();
-      return isSupported && biometrics.isNotEmpty;
+      return _localAuth.isDeviceSupported();
     } on LocalAuthException {
       return false;
     }
   }
 
-  Future<bool> authenticateWithBiometrics() async {
-    final bool available = await isBiometricAvailable();
+  Future<bool> authenticateWithDeviceCredentials() async {
+    final bool available = await canUseDeviceAuth();
     if (!available) {
       return false;
     }
 
     try {
       return _localAuth.authenticate(
-        localizedReason: 'Use biometrics to unlock your account',
-        biometricOnly: true,
+        localizedReason:
+            'Authenticate with your device password, PIN, pattern, or biometrics to unlock.',
+        biometricOnly: false,
         persistAcrossBackgrounding: true,
       );
     } on LocalAuthException {
