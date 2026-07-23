@@ -16,18 +16,24 @@ class TodoCubit extends Cubit<TodoState> {
 
   Future<void> _initialize() async {
     try {
-      final tasks = await _repository.fetchTasks();
-      if (tasks.isEmpty) {
-        emit(TodoEmpty());
-      }
-      emit(TodoLoaded(await _repository.fetchTasks()));
+      await _loadTasks();
     } catch (e) {
       emit(TaskError(e.toString()));
     }
   }
 
   Future<void> _refresh() async {
-    emit(TodoLoaded(await _repository.fetchTasks()));
+    await _loadTasks();
+  }
+
+  Future<void> _loadTasks() async {
+    final tasks = await _repository.fetchTasks();
+    if (tasks.isEmpty) {
+      emit(TodoEmpty());
+      return;
+    }
+
+    emit(TodoLoaded(tasks));
   }
 
   Future<void> addTask(ElementTask task) async {

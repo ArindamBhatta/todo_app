@@ -99,6 +99,68 @@ class ElementTask {
     );
   }
 
+  static String _readString(
+    Map<String, Object?> json,
+    List<String> keys, {
+    String fallback = '',
+  }) {
+    for (final key in keys) {
+      final value = json[key];
+      if (value == null) continue;
+
+      final text = value.toString();
+      if (text.isNotEmpty) {
+        return text;
+      }
+    }
+
+    return fallback;
+  }
+
+  static DateTime _readDateTime(
+    Map<String, Object?> json,
+    List<String> keys, {
+    required DateTime fallback,
+  }) {
+    for (final key in keys) {
+      final value = json[key];
+      if (value is String && value.isNotEmpty) {
+        return DateTime.parse(value);
+      }
+    }
+
+    return fallback;
+  }
+
+  static bool _readBool(
+    Map<String, Object?> json,
+    List<String> keys, {
+    bool fallback = false,
+  }) {
+    for (final key in keys) {
+      final value = json[key];
+      if (value == null) continue;
+
+      if (value is bool) {
+        return value;
+      }
+
+      if (value is num) {
+        return value.toInt() == 1;
+      }
+
+      final text = value.toString().toLowerCase();
+      if (text == '1' || text == 'true') {
+        return true;
+      }
+      if (text == '0' || text == 'false') {
+        return false;
+      }
+    }
+
+    return fallback;
+  }
+
   Map<String, Object?> toJson() {
     return {
       'id': id,
@@ -113,15 +175,34 @@ class ElementTask {
   }
 
   factory ElementTask.fromJson(Map<String, Object?> json) {
+    final startTime = _readDateTime(
+      json,
+      ['start_time'],
+      fallback: DateTime.now(),
+    );
+    final endTime = _readDateTime(
+      json,
+      ['end_time', 'desire_deadline', 'absolute_deadline'],
+      fallback: startTime,
+    );
+
     return ElementTask(
-      id: json['id']! as String,
-      category: json['category']! as String,
-      name: json['name']! as String,
-      description: json['description']! as String,
-      startTime: DateTime.parse(json['start_time']! as String),
-      endTime: DateTime.parse(json['end_time']! as String),
-      urgencyLevel: json['urgency_level']! as String,
-      isPending: (json['is_pending'] as num).toInt() == 1,
+      id: _readString(json, ['id'], fallback: uuid.v4()),
+      category: _readString(
+        json,
+        ['category'],
+        fallback: Category.personal.value,
+      ),
+      name: _readString(json, ['name'], fallback: 'Untitled task'),
+      description: _readString(json, ['description']),
+      startTime: startTime,
+      endTime: endTime,
+      urgencyLevel: _readString(
+        json,
+        ['urgency_level'],
+        fallback: UrgencyLevel.notUrgentImportant.value,
+      ),
+      isPending: _readBool(json, ['is_pending'], fallback: true),
     );
   }
 }

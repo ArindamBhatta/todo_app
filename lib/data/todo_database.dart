@@ -21,7 +21,7 @@ class TodoDatabase {
 
     return openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE tasks(
@@ -30,14 +30,21 @@ class TodoDatabase {
             urgency_level TEXT NOT NULL,
             category TEXT NOT NULL,
             name TEXT NOT NULL,
-            color INTEGER NOT NULL,
+            description TEXT NOT NULL DEFAULT '',
             start_time TEXT NOT NULL,
-            absolute_deadline TEXT NOT NULL,
-            desire_deadline TEXT NOT NULL
+            end_time TEXT NOT NULL DEFAULT ''
           )
         ''');
       },
       onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 3) {
+          await db.execute(
+            "ALTER TABLE tasks ADD COLUMN description TEXT NOT NULL DEFAULT ''",
+          );
+          await db.execute(
+            "ALTER TABLE tasks ADD COLUMN end_time TEXT NOT NULL DEFAULT ''",
+          );
+        }
       },
     );
   }

@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:todo/features/add_todo/data/todo.dart';
 import 'package:todo/features/home/presentation/logic/todo_cubit.dart';
-import 'package:todo/features/home/presentation/page/home_screen.dart';
+import 'package:todo/features/home/presentation/page/widgets/category_style.dart';
 
 class DetailsPage extends StatelessWidget {
   final ElementTask task;
