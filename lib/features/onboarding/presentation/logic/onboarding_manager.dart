@@ -6,6 +6,11 @@ class OnboardingManager extends Cubit<bool> {
 
   OnboardingManager(this._repository) : super(false);
 
+  Future<void> syncOnboardingState() async {
+    final bool isCompleted = await _repository.isOnboardingCompleted();
+    emit(isCompleted);
+  }
+
   Future<void> completeOnboarding() async {
     await _repository.setOnboardingCompleted(true);
     emit(true);
