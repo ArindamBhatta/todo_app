@@ -5,6 +5,8 @@ import 'package:todo/core/router/app_router.dart';
 import 'package:todo/features/auth/presentation/logic/auth_manager.dart';
 import 'package:todo/features/auth/presentation/logic/biometric_auth_service.dart';
 
+enum _LoginMode { signIn, setupCredential, unlock }
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -14,9 +16,15 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final BiometricAuthService _biometricAuthService = BiometricAuthService();
+  final TextEditingController _secretController = TextEditingController();
+  final TextEditingController _confirmSecretController =
+      TextEditingController();
 
   bool _isLoading = false;
-  bool _isUnlockMode = false;
+  bool _isBiometricShortcutAvailable = false;
+  bool _obscureSecret = true;
+  bool _obscureConfirmSecret = true;
+  _LoginMode _mode = _LoginMode.signIn;
 
   @override
   void initState() {
@@ -24,17 +32,44 @@ class _LoginScreenState extends State<LoginScreen> {
     _prepareScreen();
   }
 
+  @override
+  void dispose() {
+    _secretController.dispose();
+    _confirmSecretController.dispose();
+    super.dispose();
+  }
+
   Future<void> _prepareScreen() async {
     final AuthManager authManager = context.read<AuthManager>();
-    final bool isLoggedIn = await authManager.isLoggedIn();
-    final bool isBiometricEnabled = await authManager.isBiometricEnabled();
+    final List<dynamic> results = await Future.wait<dynamic>(<Future<dynamic>>[
+      authManager.isLoggedIn(),
+      authManager.hasAppLockCredential(),
+      authManager.isBiometricEnabled(),
+      _biometricAuthService.isBiometricAvailable(),
+    ]);
+    final bool isLoggedIn = results[0] as bool;
+    final bool hasAppLockCredential = results[1] as bool;
+    final bool isBiometricEnabled = results[2] as bool;
+    final bool isBiometricAvailable = results[3] as bool;
 
     if (!mounted) {
       return;
     }
 
     setState(() {
-      _isUnlockMode = isLoggedIn && isBiometricEnabled;
+      if (!isLoggedIn) {
+        _mode = _LoginMode.signIn;
+      } else if (!hasAppLockCredential) {
+        _mode = _LoginMode.setupCredential;
+      } else {
+        _mode = _LoginMode.unlock;
+      }
+
+      _isBiometricShortcutAvailable =
+          isLoggedIn &&
+          hasAppLockCredential &&
+          isBiometricEnabled &&
+          isBiometricAvailable;
     });
   }
 
@@ -55,16 +90,16 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      final bool enrolled = await _enforceMandatoryBiometricEnrollment();
-      if (!enrolled) {
-        await authManager.logout();
-        _showMessage('Biometric setup is required to continue.');
+      if (!mounted) {
         return;
       }
 
-      if (mounted) {
-        context.go(AppRoutes.home);
-      }
+      setState(() {
+        _mode = _LoginMode.setupCredential;
+        _isBiometricShortcutAvailable = false;
+        _secretController.clear();
+        _confirmSecretController.clear();
+      });
     } catch (_) {
       _showMessage('Sign-in failed. Please try again.');
     } finally {
@@ -76,53 +111,146 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Future<bool> _enforceMandatoryBiometricEnrollment() async {
+  Future<void> _saveAppLockCredential() async {
+    if (_isLoading) {
+      return;
+    }
+
+    final String secret = _secretController.text;
+    final String confirmSecret = _confirmSecretController.text;
+    final String? validationMessage = _validateSecret(secret);
+
+    if (validationMessage != null) {
+      _showMessage(validationMessage);
+      return;
+    }
+
+    if (secret != confirmSecret) {
+      _showMessage('PIN or password confirmation does not match.');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final AuthManager authManager = context.read<AuthManager>();
+      await authManager.saveAppLockCredential(secret);
+      await _offerBiometricShortcut();
+
+      if (mounted) {
+        context.go(AppRoutes.home);
+      }
+    } catch (_) {
+      _showMessage('Unable to save your app lock. Please try again.');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _offerBiometricShortcut() async {
     final AuthManager authManager = context.read<AuthManager>();
     final bool canUseBiometrics =
-        await _biometricAuthService.canUseBiometrics();
+        await _biometricAuthService.isBiometricAvailable();
+
+    await authManager.setBiometricEnabled(false);
 
     if (!canUseBiometrics) {
-      return false;
+      return;
     }
 
     if (!mounted) {
-      return false;
+      return;
     }
 
-    final bool? proceed = await showDialog<bool>(
+    final bool? enableShortcut = await showDialog<bool>(
       context: context,
-      barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Enable biometric security'),
+          title: const Text('Enable biometric shortcut'),
           content: const Text(
-            'Biometric authentication is required for every launch after sign-in.',
+            'Your PIN or password will remain the default unlock method. Biometrics can be added as a faster shortcut.',
           ),
           actions: <Widget>[
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel sign-in'),
+              child: const Text('Not now'),
             ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Continue'),
+              child: const Text('Enable'),
             ),
           ],
         );
       },
     );
 
-    if (proceed != true) {
-      return false;
+    if (enableShortcut != true) {
+      return;
     }
 
-    final bool authenticated = await _biometricAuthService.authenticate();
+    final bool authenticated =
+        await _biometricAuthService.authenticateWithBiometrics();
     if (!authenticated) {
-      return false;
+      _showMessage(
+        'Biometric shortcut was not enabled. Use your PIN or password to unlock.',
+      );
+      return;
     }
 
     await authManager.setBiometricEnabled(true);
-    return true;
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _isBiometricShortcutAvailable = true;
+    });
+  }
+
+  Future<void> _unlockWithCredential() async {
+    if (_isLoading) {
+      return;
+    }
+
+    final String secret = _secretController.text;
+    if (secret.isEmpty) {
+      _showMessage('Enter your PIN or password to continue.');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final bool isValid = await context
+          .read<AuthManager>()
+          .verifyAppLockCredential(secret);
+
+      if (!isValid) {
+        _showMessage('Incorrect PIN or password.');
+        return;
+      }
+
+      if (mounted) {
+        context.go(AppRoutes.home);
+      }
+    } catch (_) {
+      _showMessage('Unable to unlock the app. Please try again.');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   Future<void> _unlockWithBiometrics() async {
@@ -135,7 +263,8 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final bool authenticated = await _biometricAuthService.authenticate();
+      final bool authenticated =
+          await _biometricAuthService.authenticateWithBiometrics();
       if (authenticated) {
         if (mounted) {
           context.go(AppRoutes.home);
@@ -151,6 +280,88 @@ class _LoginScreenState extends State<LoginScreen> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  Future<void> _useAnotherGoogleAccount() async {
+    if (_isLoading) {
+      return;
+    }
+
+    await context.read<AuthManager>().logout();
+    _secretController.clear();
+    _confirmSecretController.clear();
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _mode = _LoginMode.signIn;
+      _isBiometricShortcutAvailable = false;
+    });
+  }
+
+  String? _validateSecret(String secret) {
+    if (secret.isEmpty) {
+      return 'Enter a PIN or password.';
+    }
+
+    final bool isNumeric = RegExp(r'^\d+$').hasMatch(secret);
+    if (isNumeric) {
+      return secret.length >= 4 ? null : 'PIN must be at least 4 digits.';
+    }
+
+    return secret.length >= 8
+        ? null
+        : 'Password must be at least 8 characters.';
+  }
+
+  String get _title {
+    switch (_mode) {
+      case _LoginMode.signIn:
+        return 'Sign in with Google';
+      case _LoginMode.setupCredential:
+        return 'Create your app lock';
+      case _LoginMode.unlock:
+        return 'Unlock with PIN or password';
+    }
+  }
+
+  String get _description {
+    switch (_mode) {
+      case _LoginMode.signIn:
+        return 'Sign in first. Then create a PIN or password as the default unlock method.';
+      case _LoginMode.setupCredential:
+        return 'Set the PIN or password you want to use every time the app opens. Biometrics stay optional.';
+      case _LoginMode.unlock:
+        return 'Enter your PIN or password to continue. If you enabled biometrics, you can use that shortcut instead.';
+    }
+  }
+
+  String get _primaryActionLabel {
+    switch (_mode) {
+      case _LoginMode.signIn:
+        return 'Continue with Google';
+      case _LoginMode.setupCredential:
+        return 'Save PIN or password';
+      case _LoginMode.unlock:
+        return 'Unlock app';
+    }
+  }
+
+  VoidCallback? get _primaryAction {
+    if (_isLoading) {
+      return null;
+    }
+
+    switch (_mode) {
+      case _LoginMode.signIn:
+        return _handleGoogleSignIn;
+      case _LoginMode.setupCredential:
+        return _saveAppLockCredential;
+      case _LoginMode.unlock:
+        return _unlockWithCredential;
     }
   }
 
@@ -193,9 +404,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        _isUnlockMode
-                            ? 'Biometric Unlock Required'
-                            : 'Sign in with Google',
+                        _title,
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontSize: 24,
@@ -205,9 +414,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        _isUnlockMode
-                            ? 'You are already signed in. Authenticate to continue.'
-                            : 'First launch requires Google sign-in and biometric enrollment.',
+                        _description,
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontSize: 14,
@@ -215,16 +422,73 @@ class _LoginScreenState extends State<LoginScreen> {
                           height: 1.4,
                         ),
                       ),
+                      if (_mode != _LoginMode.signIn) ...<Widget>[
+                        const SizedBox(height: 24),
+                        TextField(
+                          controller: _secretController,
+                          obscureText: _obscureSecret,
+                          enableSuggestions: false,
+                          autocorrect: false,
+                          textInputAction:
+                              _mode == _LoginMode.setupCredential
+                                  ? TextInputAction.next
+                                  : TextInputAction.done,
+                          decoration: InputDecoration(
+                            labelText: 'PIN or password',
+                            hintText: 'Enter your app lock',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            suffixIcon: IconButton(
+                              onPressed: () {
+                                setState(() {
+                                  _obscureSecret = !_obscureSecret;
+                                });
+                              },
+                              icon: Icon(
+                                _obscureSecret
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.visibility_outlined,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                      if (_mode == _LoginMode.setupCredential) ...<Widget>[
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _confirmSecretController,
+                          obscureText: _obscureConfirmSecret,
+                          enableSuggestions: false,
+                          autocorrect: false,
+                          textInputAction: TextInputAction.done,
+                          decoration: InputDecoration(
+                            labelText: 'Confirm PIN or password',
+                            hintText: 'Re-enter your app lock',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            suffixIcon: IconButton(
+                              onPressed: () {
+                                setState(() {
+                                  _obscureConfirmSecret =
+                                      !_obscureConfirmSecret;
+                                });
+                              },
+                              icon: Icon(
+                                _obscureConfirmSecret
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.visibility_outlined,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 24),
                       SizedBox(
                         height: 52,
                         child: ElevatedButton.icon(
-                          onPressed:
-                              _isLoading
-                                  ? null
-                                  : _isUnlockMode
-                                  ? _unlockWithBiometrics
-                                  : _handleGoogleSignIn,
+                          onPressed: _primaryAction,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF4F46E5),
                             foregroundColor: Colors.white,
@@ -243,14 +507,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   )
                                   : Icon(
-                                    _isUnlockMode
-                                        ? Icons.fingerprint_rounded
-                                        : Icons.login_rounded,
+                                    _mode == _LoginMode.signIn
+                                        ? Icons.login_rounded
+                                        : Icons.lock_open_rounded,
                                   ),
                           label: Text(
-                            _isUnlockMode
-                                ? 'Unlock with biometrics'
-                                : 'Continue with Google',
+                            _primaryActionLabel,
                             style: const TextStyle(
                               fontWeight: FontWeight.w700,
                               fontSize: 16,
@@ -258,21 +520,30 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                       ),
-                      if (_isUnlockMode) ...<Widget>[
+                      if (_mode == _LoginMode.unlock &&
+                          _isBiometricShortcutAvailable) ...<Widget>[
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          height: 52,
+                          child: OutlinedButton.icon(
+                            onPressed:
+                                _isLoading ? null : _unlockWithBiometrics,
+                            style: OutlinedButton.styleFrom(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              side: const BorderSide(color: Color(0xFFCBD5E1)),
+                            ),
+                            icon: const Icon(Icons.fingerprint_rounded),
+                            label: const Text('Use biometric shortcut'),
+                          ),
+                        ),
+                      ],
+                      if (_mode != _LoginMode.signIn) ...<Widget>[
                         const SizedBox(height: 12),
                         TextButton(
                           onPressed:
-                              _isLoading
-                                  ? null
-                                  : () async {
-                                    await context.read<AuthManager>().logout();
-                                    if (!mounted) {
-                                      return;
-                                    }
-                                    setState(() {
-                                      _isUnlockMode = false;
-                                    });
-                                  },
+                              _isLoading ? null : _useAnotherGoogleAccount,
                           child: const Text('Use another Google account'),
                         ),
                       ],

@@ -2,13 +2,14 @@ import '../datasources/auth_local_datasource.dart';
 import '../datasources/google_auth.dart';
 
 class AuthRepository {
-  final AuthLocalDataSource _localDataSource;
+  final AuthLocalDataSource _authLocalDataSource;
   final GoogleAuthDataSource _googleAuthDataSource;
 
   AuthRepository(
-    this._localDataSource, {
+    AuthLocalDataSource authLocalDataSource, {
     GoogleAuthDataSource? googleAuthDataSource,
-  }) : _googleAuthDataSource = googleAuthDataSource ?? GoogleAuthDataSource();
+  }) : _authLocalDataSource = authLocalDataSource,
+       _googleAuthDataSource = googleAuthDataSource ?? GoogleAuthDataSource();
 
   Future<bool> isLoggedIn() async => _googleAuthDataSource.isLoggedIn();
 
@@ -16,15 +17,22 @@ class AuthRepository {
 
   Future<void> signOut() async {
     await _googleAuthDataSource.signOut();
-    await _localDataSource.setBiometricEnabled(false);
+    await _authLocalDataSource.clearAppLockCredential();
+    await _authLocalDataSource.setBiometricEnabled(false);
   }
 
-  Future<bool> isBiometricEnabled() => _localDataSource.isBiometricEnabled();
+  Future<bool> isBiometricEnabled() =>
+      _authLocalDataSource.isBiometricEnabled();
 
   Future<void> setBiometricEnabled(bool enabled) =>
-      _localDataSource.setBiometricEnabled(enabled);
+      _authLocalDataSource.setBiometricEnabled(enabled);
 
-  Future<bool> isGuestMode() => _localDataSource.isGuestMode();
+  Future<bool> hasAppLockCredential() =>
+      _authLocalDataSource.hasAppLockCredential();
 
-  Future<void> setGuestMode(bool value) => _localDataSource.setGuestMode(value);
+  Future<void> saveAppLockCredential(String secret) =>
+      _authLocalDataSource.saveAppLockCredential(secret);
+
+  Future<bool> verifyAppLockCredential(String secret) =>
+      _authLocalDataSource.verifyAppLockCredential(secret);
 }

@@ -30,4 +30,12 @@ class AuthManager extends Cubit<bool> {
 
   Future<void> setBiometricEnabled(bool enabled) =>
       _repository.setBiometricEnabled(enabled);
+
+  Future<bool> hasAppLockCredential() => _repository.hasAppLockCredential();
+
+  Future<void> saveAppLockCredential(String secret) =>
+      _repository.saveAppLockCredential(secret);
+
+  Future<bool> verifyAppLockCredential(String secret) =>
+      _repository.verifyAppLockCredential(secret);
 }

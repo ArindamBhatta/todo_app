@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:todo/core/router/app_router.dart';
 import 'package:todo/features/onboarding/presentation/page/widgets/scrollable_screen.dart';
 import 'package:todo/features/onboarding/presentation/logic/onboarding_manager.dart';
+import 'package:todo/features/splash/logic/splash_manager.dart';
 
 class OnBoardingScreen extends StatefulWidget {
   const OnBoardingScreen({super.key});
@@ -183,6 +184,7 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
               child: ElevatedButton(
                 onPressed: () async {
                   await context.read<OnboardingManager>().completeOnboarding();
+                  await context.read<SplashManager>().refreshRoutingState();
 
                   if (mounted) {
                     context.go(AppRoutes.login);

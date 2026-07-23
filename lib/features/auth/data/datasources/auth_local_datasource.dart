@@ -1,72 +1,66 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthLocalDataSource {
-  static const String _isBiometricEnabledKey = 'is_biometric_enabled';
-  static const _guestMode = 'guest_mode';
+  static const String _biometricEnabledKey = 'auth_biometric_enabled';
+  static const String _appLockSecretHashKey = 'auth_app_lock_secret_hash';
 
-  // check if biometric authentication is enabled
+  static const FlutterSecureStorage _defaultSecureStorage =
+      FlutterSecureStorage(
+        aOptions: AndroidOptions(encryptedSharedPreferences: true),
+      );
+
+  final FlutterSecureStorage _secureStorage;
+
+  AuthLocalDataSource({FlutterSecureStorage? secureStorage})
+    : _secureStorage = secureStorage ?? _defaultSecureStorage;
+
   Future<bool> isBiometricEnabled() async {
-    final sharedPreferences = await SharedPreferences.getInstance();
-    return sharedPreferences.getBool(_isBiometricEnabledKey) ?? false;
+    final SharedPreferences sharedPreferences =
+        await SharedPreferences.getInstance();
+    return sharedPreferences.getBool(_biometricEnabledKey) ?? false;
   }
 
-  // set biometric authentication status
   Future<void> setBiometricEnabled(bool enabled) async {
-    final sharedPreferences = await SharedPreferences.getInstance();
-    await sharedPreferences.setBool(_isBiometricEnabledKey, enabled);
+    final SharedPreferences sharedPreferences =
+        await SharedPreferences.getInstance();
+    await sharedPreferences.setBool(_biometricEnabledKey, enabled);
   }
 
-  Future<bool> isGuestMode() async {
-    final sharedPreferences = await SharedPreferences.getInstance();
-    return sharedPreferences.getBool(_guestMode) ?? false;
+  Future<bool> hasAppLockCredential() async {
+    final String? storedHash = await _secureStorage.read(
+      key: _appLockSecretHashKey,
+    );
+    return storedHash != null && storedHash.isNotEmpty;
   }
 
-  Future<void> setGuestMode(bool value) async {
-    final sharedPreferences = await SharedPreferences.getInstance();
-    await sharedPreferences.setBool(_guestMode, value);
+  Future<void> saveAppLockCredential(String secret) async {
+    await _secureStorage.write(
+      key: _appLockSecretHashKey,
+      value: _hashSecret(secret),
+    );
+  }
+
+  Future<bool> verifyAppLockCredential(String secret) async {
+    final String? storedHash = await _secureStorage.read(
+      key: _appLockSecretHashKey,
+    );
+
+    if (storedHash == null || storedHash.isEmpty) {
+      return false;
+    }
+
+    return storedHash == _hashSecret(secret);
+  }
+
+  Future<void> clearAppLockCredential() async {
+    await _secureStorage.delete(key: _appLockSecretHashKey);
+  }
+
+  String _hashSecret(String secret) {
+    return sha256.convert(utf8.encode(secret)).toString();
   }
 }
-
-/* 
-First launch
-────────────
-
-Splash
-   │
-   ▼
-Firebase.currentUser == null
-   │
-   ▼
-Google Sign-In (mandatory)
-   │
-   ▼
-Firebase creates user
-   │
-   ▼
-Ask user to enroll/enable biometric (mandatory)
-   │
-   ▼
-Home
-
-
-Then every subsequent launch:
-
-Splash
-   │
-   ▼
-Firebase.currentUser == null ?
-   │
-   ├── Yes → Google Sign-In
-   │
-   └── No
-         │
-         ▼
-   Biometric Authentication
-         │
-    ┌────┴────┐
-    │         │
- Success    Failed
-    │         │
-    ▼         ▼
- Home     Stay Locked
- */
