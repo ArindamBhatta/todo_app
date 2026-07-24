@@ -3,12 +3,14 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:todo/features/Profile/profile.dart';
 import 'package:todo/features/add_todo/add_todo_page.dart';
-import 'package:todo/features/splash/page/splash_screen.dart';
-import 'package:todo/features/onboarding/presentation/page/view.dart';
 import 'package:todo/features/auth/presentation/pages/login_screen.dart';
 import 'package:todo/features/home/presentation/page/home_navigation_page.dart';
+import 'package:todo/features/onboarding/presentation/page/onboarding_screen.dart';
 import 'package:todo/features/splash/logic/splash_manager.dart';
+import 'package:todo/features/splash/page/splash_screen.dart';
+import 'package:todo/features/vault/presentation/pages/vault_screen.dart';
 
 abstract final class AppRoutes {
   static const splash = '/';
@@ -16,8 +18,8 @@ abstract final class AppRoutes {
   static const login = '/login';
   static const home = '/home';
   static const addTodo = '/add-todo';
-  static const verifyingBiometric = '/verifying-biometric';
-  static String homeWithTab(HomeTab tab) => '$home?tab=${tab.queryValue}';
+  static const profile = '/profile';
+  static const vault = '/vault';
 }
 
 GoRouter createAppRouter({required SplashManager splashManager}) {
@@ -40,24 +42,19 @@ GoRouter createAppRouter({required SplashManager splashManager}) {
       ),
       GoRoute(
         path: AppRoutes.home,
-        builder: (context, state) {
-          final HomeTab tab = HomeTabExtends.fromQueryValue(
-            state.uri.queryParameters['tab'],
-          );
-          return HomeNavigationPage(tab: tab);
-        },
+        builder: (context, state) => const HomeNavigationPage(),
       ),
       GoRoute(
         path: AppRoutes.addTodo,
         builder: (context, state) => const AddTodoPage(),
       ),
-
       GoRoute(
-        path: AppRoutes.verifyingBiometric,
-        builder:
-            (context, state) => const Scaffold(
-              body: Center(child: Text('Verifying Biometric')),
-            ),
+        path: AppRoutes.profile,
+        builder: (context, state) => const ProfilePage(),
+      ),
+      GoRoute(
+        path: AppRoutes.vault,
+        builder: (context, state) => const VaultScreen(),
       ),
     ],
 
@@ -84,7 +81,7 @@ GoRouter createAppRouter({required SplashManager splashManager}) {
       }
 
       if (splashState is SplashNavigateToHome) {
-        return AppRoutes.homeWithTab(HomeTab.home);
+        return AppRoutes.home;
       }
 
       return null;

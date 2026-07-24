@@ -22,25 +22,25 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
       'caption': 'Plan your day clarity',
       'subCaption':
           'Create tasks in seconds and keep your day organized from morning to night.',
-      'imageUrl': 'assets/plan_your_day.png',
+      'imageUrl': 'assets/images/onboarding/plan_your_day.png',
     },
     {
       'caption': 'Prioritize what matters',
       'subCaption':
           'Focus on urgent and important tasks so your energy goes to the right work.',
-      'imageUrl': 'assets/prioritize_what_matters.png',
+      'imageUrl': 'assets/images/onboarding/prioritize_what_matters.png',
     },
     {
       'caption': 'Track progress daily',
       'subCaption':
           'See completed tasks grow and build momentum every single day.',
-      'imageUrl': 'assets/track_progress_daily.png',
+      'imageUrl': 'assets/images/onboarding/track_progress_daily.png',
     },
     {
       'caption': 'Never miss a deadline',
       'subCaption':
           'Use reminders and smart scheduling to stay on top of every commitment.',
-      'imageUrl': 'assets/never_miss_deadline.png',
+      'imageUrl': 'assets/images/onboarding/never_miss_deadline.png',
     },
   ];
 

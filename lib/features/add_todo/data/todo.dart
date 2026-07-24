@@ -45,15 +45,15 @@ enum Category {
 }
 
 final Map<String, String> categoryImageMap = {
-  'Office': 'assets/Office.jpg',
-  'Health': 'assets/Health.jpg',
-  'Finance': 'assets/finance.jpg',
-  'Home': 'assets/Home.jpg',
-  'Personal': 'assets/Personal.jpg',
-  'Career': 'assets/Career.jpg',
-  'Self': 'assets/Self_Development.jpg',
-  'Leisure': 'assets/Leisure.jpg',
-  'Fun': 'assets/Fun.jpg',
+  'Office': 'assets/images/categories/Office.jpg',
+  'Health': 'assets/images/categories/Health.jpg',
+  'Finance': 'assets/images/categories/finance.jpg',
+  'Home': 'assets/images/categories/Home.jpg',
+  'Personal': 'assets/images/categories/Personal.jpg',
+  'Career': 'assets/images/categories/Career.jpg',
+  'Self': 'assets/images/categories/Self_Development.jpg',
+  'Leisure': 'assets/images/categories/Leisure.jpg',
+  'Fun': 'assets/images/categories/Fun.jpg',
 };
 
 class ElementTask {

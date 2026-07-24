@@ -1,6 +1,7 @@
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:todo/features/add_todo/data/todo.dart';
 import 'package:todo/features/auth/presentation/logic/auth_manager.dart';
 import 'package:todo/features/auth/presentation/logic/auth_state.dart';
@@ -292,15 +293,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
             final totalTasks = tasks.length;
             final completedTasks = tasks.where((t) => !t.isPending).length;
-            final inProgressTasks = tasks.where((t) => t.isPending).toList()
-              ..sort((a, b) {
-                final priorityA = _getUrgencyPriority(a.urgencyLevel);
-                final priorityB = _getUrgencyPriority(b.urgencyLevel);
-                if (priorityA != priorityB) {
-                  return priorityA.compareTo(priorityB);
-                }
-                return a.startTime.compareTo(b.startTime);
-              });
+            final inProgressTasks =
+                tasks.where((t) => t.isPending).toList()..sort((a, b) {
+                  final priorityA = _getUrgencyPriority(a.urgencyLevel);
+                  final priorityB = _getUrgencyPriority(b.urgencyLevel);
+                  if (priorityA != priorityB) {
+                    return priorityA.compareTo(priorityB);
+                  }
+                  return a.startTime.compareTo(b.startTime);
+                });
             final completionRate =
                 totalTasks == 0 ? 0.0 : completedTasks / totalTasks;
 
@@ -349,7 +350,12 @@ class _HomeScreenState extends State<HomeScreen> {
                               SizedBox(
                                 height: 38,
                                 child: ElevatedButton(
-                                  onPressed: () {},
+                                  onPressed: () {
+                                    context.push('/profile');
+                                  },
+                                  onLongPress: () {
+                                    context.push('/vault');
+                                  },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.white,
                                     foregroundColor: const Color(0xFF5E42EB),
@@ -362,7 +368,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   ),
                                   child: const Text(
-                                    'View Task',
+                                    'Show Analytics',
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 12,

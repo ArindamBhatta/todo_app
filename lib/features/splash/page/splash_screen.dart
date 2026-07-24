@@ -88,7 +88,9 @@ class _SplashScreenState extends State<SplashScreen> {
                       child: const FloatingWidget(
                         child: Center(
                           child: Image(
-                            image: AssetImage('assets/splash_illustration.png'),
+                            image: AssetImage(
+                              'assets/images/splash/splash_illustration.png',
+                            ),
                             fit: BoxFit.contain,
                           ),
                         ),

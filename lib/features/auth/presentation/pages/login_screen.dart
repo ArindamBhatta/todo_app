@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:todo/core/router/app_router.dart';
 import 'package:todo/features/auth/presentation/logic/auth_manager.dart';
 import 'package:todo/features/auth/presentation/logic/biometric_auth_service.dart';
-
-enum _AuthStep { signIn, verifyingBiometric }
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,12 +15,9 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final BiometricAuthService _biometricAuthService = BiometricAuthService();
-
   bool _isLoading = false;
-
   bool _canUseDeviceAuth = false;
-
-  _AuthStep _authStep = _AuthStep.signIn;
+  bool _isLoggedIn = false;
 
   @override
   void initState() {
@@ -32,36 +28,31 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _prepareScreen() async {
     final AuthManager authManager = context.read<AuthManager>();
 
-    final List<dynamic> results = await Future.wait<dynamic>(<Future<dynamic>>[
+    final results = await Future.wait<dynamic>([
       authManager.isLoggedIn(),
       _biometricAuthService.canUseDeviceAuth(),
     ]);
 
     final bool isLoggedIn = results[0] as bool;
-
     final bool canUseDeviceAuth = results[1] as bool;
 
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
 
     setState(() {
+      _isLoggedIn = isLoggedIn;
       _canUseDeviceAuth = canUseDeviceAuth;
-      // If already logged in and device auth available, jump straight to verification
-      if (isLoggedIn && canUseDeviceAuth) {
-        _authStep = _AuthStep.verifyingBiometric;
-        // Auto-trigger biometric verification
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _verifyBiometric();
-        });
-      }
     });
+
+    // If user is already logged in, trigger OS biometric verification natively
+    if (isLoggedIn && canUseDeviceAuth) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _verifyBiometric();
+      });
+    }
   }
 
   Future<void> _handleGoogleSignIn() async {
-    if (_isLoading) {
-      return;
-    }
+    if (_isLoading) return;
 
     setState(() {
       _isLoading = true;
@@ -70,22 +61,24 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final AuthManager authManager = context.read<AuthManager>();
       final bool success = await authManager.signInWithGoogle();
+
       if (!success) {
         _showMessage('Google sign-in was cancelled.');
         return;
       }
 
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
 
       setState(() {
-        _authStep = _AuthStep.verifyingBiometric;
+        _isLoggedIn = true;
       });
 
-      // Auto-trigger biometric without showing a button
-
-      await _verifyBiometric();
+      // Verify device security after Google sign-in
+      if (_canUseDeviceAuth) {
+        await _verifyBiometric();
+      } else {
+        context.go(AppRoutes.home);
+      }
     } catch (_) {
       _showMessage('Sign-in failed. Please try again.');
     } finally {
@@ -99,193 +92,191 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _verifyBiometric() async {
     if (!_canUseDeviceAuth) {
-      _showMessage(
-        'Set a screen lock on your phone first (PIN, pattern, password, or biometrics).',
-      );
+      context.go(AppRoutes.home);
       return;
     }
-    context.push(AppRoutes.verifyingBiometric);
 
     try {
       final bool authenticated =
           await _biometricAuthService.authenticateWithDeviceCredentials();
 
-      if (authenticated) {
-        if (mounted) {
-          context.go(AppRoutes.home);
-        }
-      } else {
-        if (mounted) context.go(AppRoutes.verifyingBiometric);
+      if (authenticated && mounted) {
+        context.go(AppRoutes.home);
       }
     } catch (_) {
-      _showMessage('Unable to start device authentication.');
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  String get _title {
-    switch (_authStep) {
-      case _AuthStep.signIn:
-        return 'Sign in with Google';
-      case _AuthStep.verifyingBiometric:
-        return 'Unlock with device security';
-    }
-  }
-
-  String get _description {
-    switch (_authStep) {
-      case _AuthStep.signIn:
-        return 'Sign in with Google to continue.';
-      case _AuthStep.verifyingBiometric:
-        return 'Use your phone PIN, password, pattern, or biometrics to unlock the app.';
-    }
-  }
-
-  String get _primaryActionLabel {
-    switch (_authStep) {
-      case _AuthStep.signIn:
-        return 'Continue with Google';
-      case _AuthStep.verifyingBiometric:
-        return 'Unlock with device security';
-    }
-  }
-
-  VoidCallback? get _primaryAction {
-    if (_isLoading) {
-      return null;
-    }
-
-    switch (_authStep) {
-      case _AuthStep.signIn:
-        return _handleGoogleSignIn;
-      case _AuthStep.verifyingBiometric:
-        return _verifyBiometric;
+      _showMessage('Device authentication failed.');
     }
   }
 
   void _showMessage(String message) {
-    if (!mounted) {
-      return;
-    }
-
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFBFC),
+      backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 360),
+              constraints: const BoxConstraints(maxWidth: 400),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  // Icon with subtle background
+                children: [
+                  // App Branding Logo
                   Container(
-                    height: 80,
-                    width: 80,
+                    width: 88,
+                    height: 88,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEEF2FF),
-                      borderRadius: BorderRadius.circular(20),
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF5E42EB), Color(0xFF7C3AED)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(28),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF5E42EB).withValues(alpha: 0.35),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
                     ),
                     child: const Icon(
                       Icons.check_circle_outline_rounded,
-                      size: 40,
-                      color: Color(0xFF6366F1),
+                      size: 46,
+                      color: Colors.white,
                     ),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 36),
 
-                  // Title
-                  Text(
-                    _title,
+                  // Welcome Heading
+                  const Text(
+                    'Welcome Back',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 28,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.bold,
                       color: Color(0xFF0F172A),
                       letterSpacing: -0.5,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
 
-                  // Description
-                  Text(
-                    _description,
+                  const Text(
+                    'Sign in to manage your tasks, track daily progress, and stay organized.',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 15,
+                    style: TextStyle(
+                      fontSize: 14,
                       color: Color(0xFF64748B),
                       height: 1.5,
-                      fontWeight: FontWeight.w400,
                     ),
                   ),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 44),
 
-                  // Primary Action Button
+                  // Google Sign-In Button (Production Standard)
                   SizedBox(
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: _primaryAction,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6366F1),
-                        foregroundColor: Colors.white,
-                        disabledBackgroundColor: const Color(0xFFE2E8F0),
-                        elevation: 0,
+                    width: double.infinity,
+                    height: 54,
+                    child: OutlinedButton(
+                      onPressed: _isLoading ? null : _handleGoogleSignIn,
+                      style: OutlinedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: const Color(0xFF0F172A),
+                        side: const BorderSide(color: Color(0xFFE2E8F0), width: 1.5),
+                        elevation: 2,
+                        shadowColor: Colors.black.withValues(alpha: 0.04),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(16),
                         ),
                       ),
-                      child:
-                          _isLoading
-                              ? SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.5,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    _authStep == _AuthStep.signIn
-                                        ? Colors.white
-                                        : const Color(0xFF64748B),
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                color: Color(0xFF5E42EB),
+                              ),
+                            )
+                          : const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                FaIcon(
+                                  FontAwesomeIcons.google,
+                                  size: 20,
+                                  color: Color(0xFF4285F4),
+                                ),
+                                SizedBox(width: 14),
+                                Text(
+                                  'Continue with Google',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF0F172A),
+                                    letterSpacing: -0.2,
                                   ),
                                 ),
-                              )
-                              : Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: <Widget>[
-                                  Icon(
-                                    _authStep == _AuthStep.signIn
-                                        ? Icons.login_rounded
-                                        : Icons.fingerprint_rounded,
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Text(
-                                    _primaryActionLabel,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 16,
-                                      letterSpacing: -0.3,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                              ],
+                            ),
                     ),
                   ),
 
-                  // Secondary action (show another account button only on verify step)
+                  // Quick Biometric Trigger (if logged in and device auth available)
+                  if (_isLoggedIn && _canUseDeviceAuth) ...[
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: TextButton.icon(
+                        onPressed: _isLoading ? null : _verifyBiometric,
+                        icon: const Icon(
+                          Icons.fingerprint_rounded,
+                          color: Color(0xFF5E42EB),
+                          size: 22,
+                        ),
+                        label: const Text(
+                          'Unlock with Biometrics',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF5E42EB),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+
+                  const SizedBox(height: 48),
+
+                  // Footer security badge
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.shield_outlined,
+                        size: 16,
+                        color: Colors.grey.shade400,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Secured with Google & Device Protection',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade500,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
