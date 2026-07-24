@@ -15,7 +15,10 @@ import 'package:todo/features/home/presentation/logic/todo_cubit.dart';
 import 'package:todo/features/onboarding/data/datasources/onboarding_local_datasource.dart';
 import 'package:todo/features/onboarding/data/repositories/onboarding_repository.dart';
 import 'package:todo/features/onboarding/presentation/logic/onboarding_manager.dart';
+import 'package:todo/features/pomodoro/logic/pomodoro_cubit.dart';
 import 'package:todo/features/splash/logic/splash_manager.dart';
+
+import 'package:todo/core/services/notification_service.dart';
 
 final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey =
     GlobalKey<ScaffoldMessengerState>();
@@ -23,6 +26,7 @@ final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey =
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  await NotificationService().init();
   runApp(const TodoApp());
 }
 
@@ -85,6 +89,7 @@ class _TodoAppState extends State<TodoApp> {
         BlocProvider<OnboardingManager>.value(value: _onboardingManager),
         BlocProvider<TodoCubit>.value(value: _taskManager),
         BlocProvider<ConnectivityManager>.value(value: _connectivityManager),
+        BlocProvider<PomodoroCubit>(create: (context) => PomodoroCubit()),
       ],
       child: BlocListener<ConnectivityManager, ConnectivityStatus>(
         listenWhen: (previous, current) => previous != current,

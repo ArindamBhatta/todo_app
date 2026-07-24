@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:todo/features/add_todo/data/todo.dart';
 import 'package:todo/data/todo_repository.dart';
-import 'package:awesome_notifications/awesome_notifications.dart';
 
 part 'task_state.dart';
 
@@ -40,16 +39,16 @@ class TodoCubit extends Cubit<TodoState> {
     await _repository.insertTask(task);
     if (task.urgencyLevel == 'Urgent Important') {
       try {
-        await AwesomeNotifications().createNotification(
-          content: NotificationContent(
-            id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
-            channelKey: 'urgent_important_channel',
-            title: '🚨 Urgent & Important Work!',
-            body: 'Task: "${task.name}" needs your immediate attention!',
-            notificationLayout: NotificationLayout.Default,
-            payload: {'taskId': task.id},
-          ),
-        );
+        // await AwesomeNotifications().createNotification(
+        //   content: NotificationContent(
+        //     id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
+        //     channelKey: 'urgent_important_channel',
+        //     title: '🚨 Urgent & Important Work!',
+        //     body: 'Task: "${task.name}" needs your immediate attention!',
+        //     notificationLayout: NotificationLayout.Default,
+        //     payload: {'taskId': task.id},
+        //   ),
+        // );
       } catch (e) {
         debugPrint('Failed to send notification: $e');
       }

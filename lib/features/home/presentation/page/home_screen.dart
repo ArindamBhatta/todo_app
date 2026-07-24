@@ -6,7 +6,7 @@ import 'package:todo/features/auth/presentation/logic/auth_manager.dart';
 import 'package:todo/features/auth/presentation/logic/auth_state.dart';
 import 'package:todo/features/home/presentation/logic/todo_cubit.dart';
 import 'package:todo/features/home/presentation/page/details_page.dart';
-import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:todo/features/home/presentation/page/widgets/category_style.dart';
 import 'package:todo/features/home/presentation/page/widgets/shake_widget.dart';
 
@@ -21,46 +21,39 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _checkNotificationPermissions();
+    // _checkNotificationPermissions();
   }
 
-  void _checkNotificationPermissions() {
-    AwesomeNotifications().isNotificationAllowed().then((isAllowed) {
-      if (!mounted) return;
-      if (!isAllowed) {
-        showDialog(
-          context: context,
-          builder:
-              (ctx) => AlertDialog(
-                title: const Text('Enable Notifications'),
-                content: const Text(
-                  'To get alerts for Urgent and Important tasks, please allow notifications in settings.',
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    child: const Text('Later'),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      AwesomeNotifications()
-                          .requestPermissionToSendNotifications()
-                          .then((allowed) {
-                            if (!allowed) {
-                              AwesomeNotifications()
-                                  .showNotificationConfigPage();
-                            }
-                          });
-                    },
-                    child: const Text('Allow'),
-                  ),
-                ],
-              ),
-        );
-      }
-    });
-  }
+  // void _checkNotificationPermissions() {
+  //   AwesomeNotifications().isNotificationAllowed().then((isAllowed) {
+  //     if (!mounted) return;
+  //     if (!isAllowed) {
+  //       showDialog(
+  //         context: context,
+  //         builder:
+  //             (ctx) => AlertDialog(
+  //               title: const Text('Enable Notifications'),
+  //               content: const Text(
+  //                 'To get alerts for Urgent and Important tasks, please allow notifications in settings.',
+  //               ),
+  //               actions: [
+  //                 TextButton(
+  //                   onPressed: () => Navigator.pop(ctx),
+  //                   child: const Text('Later'),
+  //                 ),
+  //                 TextButton(
+  //                   onPressed: () {
+  //                     Navigator.pop(ctx);
+  //                     //Todo: check
+  //                   },
+  //                   child: const Text('Allow'),
+  //                 ),
+  //               ],
+  //             ),
+  //       );
+  //     }
+  //   });
+  // }
 
   Widget _buildProfileHeader() {
     return BlocBuilder<AuthManager, AuthState>(
@@ -131,31 +124,34 @@ class _HomeScreenState extends State<HomeScreen> {
               alignment: Alignment.topRight,
               children: [
                 IconButton(
-                  onPressed: () async {
-                    final isAllowed =
-                        await AwesomeNotifications().isNotificationAllowed();
-                    if (!isAllowed) {
-                      await AwesomeNotifications()
-                          .requestPermissionToSendNotifications()
-                          .then((allowed) {
-                            if (!allowed) {
-                              AwesomeNotifications()
-                                  .showNotificationConfigPage();
-                            }
-                          });
-                    } else {
-                      await AwesomeNotifications().createNotification(
-                        content: NotificationContent(
-                          id: 9999,
-                          channelKey: 'urgent_important_channel',
-                          title: '🔔 Notification System Active!',
-                          body:
-                              'Local notifications are active and ready for Urgent Important tasks.',
-                          notificationLayout: NotificationLayout.Default,
-                        ),
-                      );
-                    }
+                  onPressed: () {
+                    //TODO: check
                   },
+                  // onPressed: () async {
+                  //   final isAllowed =
+                  //       await AwesomeNotifications().isNotificationAllowed();
+                  //   if (!isAllowed) {
+                  //     await AwesomeNotifications()
+                  //         .requestPermissionToSendNotifications()
+                  //         .then((allowed) {
+                  //           if (!allowed) {
+                  //             AwesomeNotifications()
+                  //                 .showNotificationConfigPage();
+                  //           }
+                  //         });
+                  //   } else {
+                  //     await AwesomeNotifications().createNotification(
+                  //       content: NotificationContent(
+                  //         id: 9999,
+                  //         channelKey: 'urgent_important_channel',
+                  //         title: '🔔 Notification System Active!',
+                  //         body:
+                  //             'Local notifications are active and ready for Urgent Important tasks.',
+                  //         notificationLayout: NotificationLayout.Default,
+                  //       ),
+                  //     );
+                  //   }
+                  // },
                   icon: const Icon(
                     Icons.notifications_rounded,
                     color: Color(0xFF0F172A),
