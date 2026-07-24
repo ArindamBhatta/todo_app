@@ -175,33 +175,23 @@ class ElementTask {
   }
 
   factory ElementTask.fromJson(Map<String, Object?> json) {
-    final startTime = _readDateTime(
-      json,
-      ['start_time'],
-      fallback: DateTime.now(),
-    );
-    final endTime = _readDateTime(
-      json,
-      ['end_time', 'desire_deadline', 'absolute_deadline'],
-      fallback: startTime,
-    );
+    final startTime = _readDateTime(json, [
+      'start_time',
+    ], fallback: DateTime.now());
+    final endTime = _readDateTime(json, ['end_time'], fallback: startTime);
 
     return ElementTask(
       id: _readString(json, ['id'], fallback: uuid.v4()),
-      category: _readString(
-        json,
-        ['category'],
-        fallback: Category.personal.value,
-      ),
+      category: _readString(json, [
+        'category',
+      ], fallback: Category.personal.value),
       name: _readString(json, ['name'], fallback: 'Untitled task'),
       description: _readString(json, ['description']),
       startTime: startTime,
       endTime: endTime,
-      urgencyLevel: _readString(
-        json,
-        ['urgency_level'],
-        fallback: UrgencyLevel.notUrgentImportant.value,
-      ),
+      urgencyLevel: _readString(json, [
+        'urgency_level',
+      ], fallback: UrgencyLevel.notUrgentImportant.value),
       isPending: _readBool(json, ['is_pending'], fallback: true),
     );
   }

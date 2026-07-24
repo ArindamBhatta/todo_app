@@ -327,12 +327,9 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             }
             if (state is TodoEmpty) {
-              return const Center(
-                child: Text('No tasks yet.'),
-              );
+              return const Center(child: Text('No tasks yet.'));
             }
             if (state is TaskError) {
-              debugPrint(' 📝 📝 📝 ${state.message}');
               return Center(
                 child: Text(
                   'Failed to load tasks: ${state.message ?? 'Unknown error'}',

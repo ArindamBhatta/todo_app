@@ -19,8 +19,14 @@ class _AddTodoPageState extends State<AddTodoPage> {
   String projectName = '';
   String description = '';
 
+  int selectedTabIndex = 0; // 0: Quick Work, 1: Project Work
+
   late DateTime startDate;
   late DateTime endDate;
+
+  late TimeOfDay startTime;
+  late TimeOfDay endTime;
+
   UrgencyLevel urgencyLevel = UrgencyLevel.urgentImportant;
 
   @override
@@ -29,6 +35,13 @@ class _AddTodoPageState extends State<AddTodoPage> {
     final today = _today();
     startDate = today;
     endDate = today;
+
+    final now = TimeOfDay.now();
+    startTime = now;
+    endTime = TimeOfDay(
+      hour: (now.hour + 1) % 24,
+      minute: now.minute,
+    );
   }
 
   DateTime _today() {
@@ -82,6 +95,32 @@ class _AddTodoPageState extends State<AddTodoPage> {
           }
         } else {
           endDate = picked;
+        }
+      });
+    }
+  }
+
+  Future<void> _pickTime(bool isStartTime) async {
+    final initialTime = isStartTime ? startTime : endTime;
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: initialTime,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(primary: Color(0xFF6B4EFF)),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        if (isStartTime) {
+          startTime = picked;
+        } else {
+          endTime = picked;
         }
       });
     }
@@ -269,23 +308,55 @@ class _AddTodoPageState extends State<AddTodoPage> {
     }
   }
 
-  void _saveProject() {
+  void _saveTask() {
     if (!_formKey.currentState!.validate()) return;
 
     final trimmedName = projectName.trim();
     if (trimmedName.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a project name')),
+        SnackBar(
+          content: Text(
+            selectedTabIndex == 0
+                ? 'Please enter a task name'
+                : 'Please enter a project name',
+          ),
+        ),
       );
       return;
+    }
+
+    final DateTime taskStart;
+    final DateTime taskEnd;
+
+    if (selectedTabIndex == 0) {
+      // Quick Work: uses today's date with selected time
+      final today = _today();
+      taskStart = DateTime(
+        today.year,
+        today.month,
+        today.day,
+        startTime.hour,
+        startTime.minute,
+      );
+      taskEnd = DateTime(
+        today.year,
+        today.month,
+        today.day,
+        endTime.hour,
+        endTime.minute,
+      );
+    } else {
+      // Project Work: uses selected start and end dates
+      taskStart = startDate;
+      taskEnd = endDate;
     }
 
     final task = ElementTask(
       id: uuid.v4(),
       name: trimmedName,
       description: description,
-      startTime: startDate,
-      endTime: endDate,
+      startTime: taskStart,
+      endTime: taskEnd,
       category: taskGroup,
       urgencyLevel: urgencyLevel.value,
       isPending: true,
@@ -311,9 +382,9 @@ class _AddTodoPageState extends State<AddTodoPage> {
           ),
           onPressed: () => context.pop(),
         ),
-        title: const Text(
-          'Add Project',
-          style: TextStyle(
+        title: Text(
+          selectedTabIndex == 0 ? 'Add Quick Task' : 'Add Project',
+          style: const TextStyle(
             color: Color(0xFF1E1E2D),
             fontWeight: FontWeight.w800,
             fontSize: 20,
@@ -363,6 +434,123 @@ class _AddTodoPageState extends State<AddTodoPage> {
               physics: const BouncingScrollPhysics(),
               child: Column(
                 children: [
+                  // Tab selector: Quick Work vs Project Work
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 20),
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE8EAF0).withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                selectedTabIndex = 0;
+                              });
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                color: selectedTabIndex == 0
+                                    ? Colors.white
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: selectedTabIndex == 0
+                                    ? [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.05),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ]
+                                    : [],
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.bolt_rounded,
+                                    size: 18,
+                                    color: selectedTabIndex == 0
+                                        ? const Color(0xFF6B4EFF)
+                                        : const Color(0xFF8F93A4),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Quick Work',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                      color: selectedTabIndex == 0
+                                          ? const Color(0xFF6B4EFF)
+                                          : const Color(0xFF8F93A4),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                selectedTabIndex = 1;
+                              });
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                color: selectedTabIndex == 1
+                                    ? Colors.white
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: selectedTabIndex == 1
+                                    ? [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.05),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ]
+                                    : [],
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.folder_special_rounded,
+                                    size: 18,
+                                    color: selectedTabIndex == 1
+                                        ? const Color(0xFF6B4EFF)
+                                        : const Color(0xFF8F93A4),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Project Work',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                      color: selectedTabIndex == 1
+                                          ? const Color(0xFF6B4EFF)
+                                          : const Color(0xFF8F93A4),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Task Group Card (Same for both)
                   GestureDetector(
                     onTap: _showCategoryPicker,
                     child: _buildCard(
@@ -412,6 +600,7 @@ class _AddTodoPageState extends State<AddTodoPage> {
                     ),
                   ),
 
+                  // Title Card
                   _buildCard(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 20,
@@ -420,30 +609,35 @@ class _AddTodoPageState extends State<AddTodoPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Project Name',
-                          style: TextStyle(
+                        Text(
+                          selectedTabIndex == 0 ? 'Task Name' : 'Project Name',
+                          style: const TextStyle(
                             fontSize: 12,
                             color: Color(0xFF8F93A4),
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                         TextFormField(
+                          key: ValueKey('name_$selectedTabIndex'),
                           initialValue: projectName,
                           style: const TextStyle(
                             fontSize: 16,
                             color: Color(0xFF1E1E2D),
                             fontWeight: FontWeight.w600,
                           ),
-                          decoration: const InputDecoration(
-                            hintText: 'Enter project name',
+                          decoration: InputDecoration(
+                            hintText: selectedTabIndex == 0
+                                ? 'e.g., Take medicine, Clean room'
+                                : 'Enter project name',
                             isDense: true,
-                            contentPadding: EdgeInsets.only(top: 8, bottom: 8),
+                            contentPadding: const EdgeInsets.only(top: 8, bottom: 8),
                             border: InputBorder.none,
                           ),
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
-                              return 'Project name is required';
+                              return selectedTabIndex == 0
+                                  ? 'Task name is required'
+                                  : 'Project name is required';
                             }
                             return null;
                           },
@@ -453,6 +647,7 @@ class _AddTodoPageState extends State<AddTodoPage> {
                     ),
                   ),
 
+                  // Description Card
                   _buildCard(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 20,
@@ -470,6 +665,7 @@ class _AddTodoPageState extends State<AddTodoPage> {
                           ),
                         ),
                         TextFormField(
+                          key: ValueKey('desc_$selectedTabIndex'),
                           initialValue: description,
                           maxLines: 4,
                           style: const TextStyle(
@@ -478,10 +674,12 @@ class _AddTodoPageState extends State<AddTodoPage> {
                             fontWeight: FontWeight.w500,
                             height: 1.5,
                           ),
-                          decoration: const InputDecoration(
-                            hintText: 'Enter project description (optional)',
+                          decoration: InputDecoration(
+                            hintText: selectedTabIndex == 0
+                                ? 'Enter task description (optional)'
+                                : 'Enter project description (optional)',
                             isDense: true,
-                            contentPadding: EdgeInsets.only(top: 12, bottom: 8),
+                            contentPadding: const EdgeInsets.only(top: 12, bottom: 8),
                             border: InputBorder.none,
                           ),
                           onChanged: (val) => description = val,
@@ -490,110 +688,216 @@ class _AddTodoPageState extends State<AddTodoPage> {
                     ),
                   ),
 
-                  GestureDetector(
-                    onTap: () => _pickDate(true),
-                    child: _buildCard(
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF3F0FF),
-                              borderRadius: BorderRadius.circular(12),
+                  // Time Pickers for Quick Work OR Date Pickers for Project Work
+                  if (selectedTabIndex == 0) ...[
+                    GestureDetector(
+                      onTap: () => _pickTime(true),
+                      child: _buildCard(
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF3F0FF),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.access_time_rounded,
+                                color: Color(0xFF6B4EFF),
+                                size: 24,
+                              ),
                             ),
-                            child: const Icon(
-                              Icons.calendar_today_rounded,
-                              color: Color(0xFF6B4EFF),
-                              size: 24,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Start Date',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Color(0xFF8F93A4),
-                                    fontWeight: FontWeight.w600,
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Start Time',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Color(0xFF8F93A4),
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  DateFormat('dd MMMM, yyyy').format(startDate),
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    color: Color(0xFF1E1E2D),
-                                    fontWeight: FontWeight.bold,
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    startTime.format(context),
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      color: Color(0xFF1E1E2D),
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                          const Icon(
-                            Icons.arrow_drop_down_rounded,
-                            color: Color(0xFF1E1E2D),
-                            size: 32,
-                          ),
-                        ],
+                            const Icon(
+                              Icons.arrow_drop_down_rounded,
+                              color: Color(0xFF1E1E2D),
+                              size: 32,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-
-                  GestureDetector(
-                    onTap: () => _pickDate(false),
-                    child: _buildCard(
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF3F0FF),
-                              borderRadius: BorderRadius.circular(12),
+                    GestureDetector(
+                      onTap: () => _pickTime(false),
+                      child: _buildCard(
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF3F0FF),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.access_time_filled_rounded,
+                                color: Color(0xFF6B4EFF),
+                                size: 24,
+                              ),
                             ),
-                            child: const Icon(
-                              Icons.calendar_today_rounded,
-                              color: Color(0xFF6B4EFF),
-                              size: 24,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'End Date',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Color(0xFF8F93A4),
-                                    fontWeight: FontWeight.w600,
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'End Time',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Color(0xFF8F93A4),
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  DateFormat('dd MMMM, yyyy').format(endDate),
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    color: Color(0xFF1E1E2D),
-                                    fontWeight: FontWeight.bold,
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    endTime.format(context),
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      color: Color(0xFF1E1E2D),
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                          const Icon(
-                            Icons.arrow_drop_down_rounded,
-                            color: Color(0xFF1E1E2D),
-                            size: 32,
-                          ),
-                        ],
+                            const Icon(
+                              Icons.arrow_drop_down_rounded,
+                              color: Color(0xFF1E1E2D),
+                              size: 32,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
+                  ] else ...[
+                    GestureDetector(
+                      onTap: () => _pickDate(true),
+                      child: _buildCard(
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF3F0FF),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.calendar_today_rounded,
+                                color: Color(0xFF6B4EFF),
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Start Date',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Color(0xFF8F93A4),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    DateFormat('dd MMMM, yyyy').format(startDate),
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      color: Color(0xFF1E1E2D),
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(
+                              Icons.arrow_drop_down_rounded,
+                              color: Color(0xFF1E1E2D),
+                              size: 32,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => _pickDate(false),
+                      child: _buildCard(
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF3F0FF),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.calendar_today_rounded,
+                                color: Color(0xFF6B4EFF),
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'End Date',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Color(0xFF8F93A4),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    DateFormat('dd MMMM, yyyy').format(endDate),
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      color: Color(0xFF1E1E2D),
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(
+                              Icons.arrow_drop_down_rounded,
+                              color: Color(0xFF1E1E2D),
+                              size: 32,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
 
+                  // Urgency Level (Same for both)
                   GestureDetector(
                     onTap: _showUrgencyPicker,
                     child: _buildCard(
@@ -670,10 +974,10 @@ class _AddTodoPageState extends State<AddTodoPage> {
                           borderRadius: BorderRadius.circular(20),
                         ),
                       ),
-                      onPressed: _saveProject,
-                      child: const Text(
-                        'Add Project',
-                        style: TextStyle(
+                      onPressed: _saveTask,
+                      child: Text(
+                        selectedTabIndex == 0 ? 'Add Quick Task' : 'Add Project',
+                        style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 18,
                         ),

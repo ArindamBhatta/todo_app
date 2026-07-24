@@ -12,437 +12,378 @@ class TasksPage extends StatefulWidget {
 }
 
 class _TasksPageState extends State<TasksPage> {
-  String _selectedCategoryFilter = 'All';
-  String _selectedStatusFilter = 'All'; // 'All', 'Active', 'Completed'
+  DateTime _selectedDate = DateTime.now();
+  String _selectedStatusFilter = 'All'; // 'All', 'To do', 'In Progress', 'Done'
 
-  void _showTaskDetailsDialog(BuildContext context, ElementTask task) {
-    showDialog(
-      context: context,
-      builder:
-          (ctx) => AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            title: Text(
-              task.name,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _detailRow(Icons.category, 'Category', task.category),
-                _detailRow(Icons.priority_high, 'Urgency', task.urgencyLevel),
-                _detailRow(
-                  Icons.access_time,
-                  'Start Time',
-                  DateFormat('MMM d, yyyy h:mm a').format(task.startTime),
-                ),
-                _detailRow(
-                  Icons.alarm,
-                  'Desired Deadline',
-                  DateFormat('MMM d, yyyy h:mm a').format(task.endTime),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () async {
-                  await ctx.read<TodoCubit>().deleteTask(task.id);
-                  if (ctx.mounted) Navigator.pop(ctx);
-                },
-                child: const Text(
-                  'Delete',
-                  style: TextStyle(color: Colors.red),
-                ),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(ctx),
-                style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF4F46E5),
-                ),
-                child: const Text('Close'),
-              ),
-            ],
-          ),
-    );
-  }
-
-  Widget _detailRow(IconData icon, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
-      child: Row(
-        children: [
-          Icon(icon, size: 16, color: const Color(0xFF64748B)),
-          const SizedBox(width: 8),
-          Text(
-            '$label: ',
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
-              color: Color(0xFF475569),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showFilterBottomSheet() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setModalState) {
-            return Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Filter Tasks',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF0F172A),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          setModalState(() {
-                            _selectedCategoryFilter = 'All';
-                            _selectedStatusFilter = 'All';
-                          });
-                          setState(() {});
-                        },
-                        child: const Text('Reset'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Status',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF475569),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children:
-                        ['All', 'Active', 'Completed'].map((status) {
-                          final isSelected = _selectedStatusFilter == status;
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8.0),
-                            child: ChoiceChip(
-                              label: Text(status),
-                              selected: isSelected,
-                              onSelected: (selected) {
-                                if (selected) {
-                                  setModalState(() {
-                                    _selectedStatusFilter = status;
-                                  });
-                                  setState(() {});
-                                }
-                              },
-                              selectedColor: const Color(0xFFE0E7FF),
-                              checkmarkColor: const Color(0xFF4F46E5),
-                              labelStyle: TextStyle(
-                                color:
-                                    isSelected
-                                        ? const Color(0xFF4F46E5)
-                                        : const Color(0xFF475569),
-                                fontWeight:
-                                    isSelected
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Category',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF475569),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 4,
-                    children:
-                        [
-                          'All',
-                          ...Category.values.map((c) => c.value),
-                        ].map<Widget>((cat) {
-                          final isSelected = _selectedCategoryFilter == cat;
-                          return ChoiceChip(
-                            label: Text(cat),
-                            selected: isSelected,
-                            onSelected: (selected) {
-                              if (selected) {
-                                setModalState(() {
-                                  _selectedCategoryFilter = cat;
-                                });
-                                setState(() {});
-                              }
-                            },
-                            selectedColor: const Color(0xFFE0E7FF),
-                            checkmarkColor: const Color(0xFF4F46E5),
-                            labelStyle: TextStyle(
-                              color:
-                                  isSelected
-                                      ? const Color(0xFF4F46E5)
-                                      : const Color(0xFF475569),
-                              fontWeight:
-                                  isSelected
-                                      ? FontWeight.bold
-                                      : FontWeight.normal,
-                            ),
-                          );
-                        }).toList(),
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: FilledButton(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFF4F46E5),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text(
-                        'Apply Filters',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
+  // Primary Theme Colors based on design
+  static const Color primaryPurple = Color(0xFF6C4DFF);
+  static const Color lightBg = Color(0xFFF7F8FA);
+  static const Color chipUnselectedBg = Color(0xFFF0EFFC);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: lightBg,
       appBar: AppBar(
-        title: const Text('All Tasks'),
+        backgroundColor: lightBg,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: Colors.black,
+            size: 20,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          "Today's Tasks",
+          style: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
+        ),
+        centerTitle: true,
         actions: [
           IconButton(
-            icon: Icon(
-              _selectedCategoryFilter != 'All' || _selectedStatusFilter != 'All'
-                  ? Icons.filter_alt
-                  : Icons.filter_alt_outlined,
-              color: const Color(0xFF4F46E5),
-            ),
-            onPressed: _showFilterBottomSheet,
+            icon: const Icon(Icons.notifications_active, color: Colors.black),
+            onPressed: () {},
           ),
         ],
       ),
-      body: BlocBuilder<TodoCubit, TodoState>(
-        builder: (context, state) {
-          if (state is TodoLoading) {
-            return const Center(
-              child: CircularProgressIndicator(color: Color(0xFF4F46E5)),
-            );
-          }
-          if (state is TaskError) {
-            return Center(
-              child: Text('Failed to load tasks: ${state.message}'),
-            );
-          }
-          final tasks = (state as TodoLoaded).tasks;
-          final filteredTasks =
-              tasks.where((task) {
-                final matchesCategory =
-                    _selectedCategoryFilter == 'All' ||
-                    task.category == _selectedCategoryFilter;
-                bool matchesStatus = true;
-                if (_selectedStatusFilter == 'Active') {
-                  matchesStatus = task.isPending;
-                } else if (_selectedStatusFilter == 'Completed') {
-                  matchesStatus = !task.isPending;
-                }
-                return matchesCategory && matchesStatus;
-              }).toList();
+      body: SafeArea(
+        child: Column(
+          children: [
+            const SizedBox(height: 12),
 
-          if (filteredTasks.isEmpty) {
-            return Center(
+            // 1. TOP HORIZONTAL CALENDAR STRIP
+            _buildDateStrip(),
+
+            const SizedBox(height: 20),
+
+            // 2. HORIZONTAL FILTER CHIPS (All, To do, In Progress, Done)
+            _buildFilterChips(),
+
+            const SizedBox(height: 16),
+
+            // 3. TASK LIST
+            Expanded(
+              child: BlocBuilder<TodoCubit, TodoState>(
+                builder: (context, state) {
+                  if (state is TodoLoading) {
+                    return const Center(
+                      child: CircularProgressIndicator(color: primaryPurple),
+                    );
+                  }
+                  if (state is TaskError) {
+                    return Center(
+                      child: Text('Failed to load tasks: ${state.message}'),
+                    );
+                  }
+
+                  final tasks = (state as TodoLoaded).tasks;
+
+                  // Filter tasks based on selected date & status filter
+                  final filteredTasks =
+                      tasks.where((task) {
+                        final isSameDate = isSameDay(
+                          task.startTime,
+                          _selectedDate,
+                        );
+
+                        bool matchesStatus = true;
+                        if (_selectedStatusFilter == 'To do') {
+                          matchesStatus = task.isPending;
+                        } else if (_selectedStatusFilter == 'Done') {
+                          matchesStatus = !task.isPending;
+                        }
+                        // Add your custom logic for 'In Progress' if required in your backend
+
+                        return isSameDate && matchesStatus;
+                      }).toList();
+
+                  if (filteredTasks.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.assignment_outlined,
+                            size: 48,
+                            color: Colors.grey.shade400,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'No tasks found for this day',
+                            style: TextStyle(color: Colors.grey.shade600),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return ListView.separated(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 8,
+                    ),
+                    itemCount: filteredTasks.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final task = filteredTasks[index];
+                      return _buildTaskCard(task);
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- WIDGET BUILDERS ---
+
+  Widget _buildDateStrip() {
+    // Generates dates centered around selected date (e.g., 7-day view window)
+    final today = DateTime.now();
+    final dates = List.generate(
+      7,
+      (i) => today.subtract(const Duration(days: 2)).add(Duration(days: i)),
+    );
+
+    return SizedBox(
+      height: 85,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: dates.length,
+        itemBuilder: (context, index) {
+          final date = dates[index];
+          final isSelected = isSameDay(date, _selectedDate);
+
+          return GestureDetector(
+            onTap: () {
+              setState(() {
+                _selectedDate = date;
+              });
+            },
+            child: Container(
+              width: 60,
+              margin: const EdgeInsets.symmetric(horizontal: 6),
+              decoration: BoxDecoration(
+                color: isSelected ? primaryPurple : Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  if (!isSelected)
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                ],
+              ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.inbox_outlined,
-                    size: 48,
-                    color: Colors.grey.shade400,
-                  ),
-                  const SizedBox(height: 8),
                   Text(
-                    _selectedCategoryFilter != 'All' ||
-                            _selectedStatusFilter != 'All'
-                        ? 'No tasks match filters'
-                        : 'No tasks yet',
-                    style: TextStyle(color: Colors.grey.shade600),
+                    DateFormat('MMM').format(date),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isSelected ? Colors.white70 : Colors.grey,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    DateFormat('d').format(date),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: isSelected ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    DateFormat('E').format(date),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: isSelected ? Colors.white : Colors.grey.shade600,
+                    ),
                   ),
                 ],
               ),
-            );
-          }
-
-          return GridView.builder(
-            padding: const EdgeInsets.all(16),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 1.1,
             ),
-            itemCount: filteredTasks.length,
-            itemBuilder: (context, index) {
-              final task = filteredTasks[index];
-              final isCompleted = !task.isPending;
-              return GestureDetector(
-                onTap: () => _showTaskDetailsDialog(context, task),
-                child: Card(
-                  elevation: 2,
-                  shadowColor: Colors.black.withOpacity(0.08),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  color: Colors.white,
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Stack(
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFEEF2F6),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    task.category,
-                                    style: const TextStyle(
-                                      color: Color(0xFF475569),
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  task.name,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color:
-                                        isCompleted
-                                            ? const Color(0xFF94A3B8)
-                                            : const Color(0xFF0F172A),
-                                    decoration:
-                                        isCompleted
-                                            ? TextDecoration.lineThrough
-                                            : TextDecoration.none,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Text(
-                              task.urgencyLevel,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF4F46E5),
-                              ),
-                            ),
-                          ],
-                        ),
-                        Positioned(
-                          top: 0,
-                          right: 0,
-                          child: InkWell(
-                            onTap: () {
-                              context.read<TodoCubit>().toggleTaskStatus(
-                                task.id,
-                              );
-                            },
-                            borderRadius: BorderRadius.circular(20),
-                            child: Container(
-                              width: 24,
-                              height: 24,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color:
-                                    isCompleted
-                                        ? const Color(0xFF4F46E5)
-                                        : Colors.white.withOpacity(0.9),
-                                border: Border.all(
-                                  color:
-                                      isCompleted
-                                          ? const Color(0xFF4F46E5)
-                                          : const Color(0xFFCBD5E1),
-                                  width: 2,
-                                ),
-                              ),
-                              child:
-                                  isCompleted
-                                      ? const Icon(
-                                        Icons.check,
-                                        size: 12,
-                                        color: Colors.white,
-                                      )
-                                      : null,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
           );
         },
       ),
     );
+  }
+
+  Widget _buildFilterChips() {
+    final filters = ['All', 'To do', 'In Progress', 'Done'];
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        children:
+            filters.map((filter) {
+              final isSelected = _selectedStatusFilter == filter;
+              return Padding(
+                padding: const EdgeInsets.only(right: 12.0),
+                child: ChoiceChip(
+                  label: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
+                    child: Text(
+                      filter,
+                      style: TextStyle(
+                        color: isSelected ? Colors.white : primaryPurple,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  selected: isSelected,
+                  onSelected: (selected) {
+                    if (selected) {
+                      setState(() {
+                        _selectedStatusFilter = filter;
+                      });
+                    }
+                  },
+                  backgroundColor: chipUnselectedBg,
+                  selectedColor: primaryPurple,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  showCheckmark: false,
+                  side: BorderSide.none,
+                ),
+              );
+            }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildTaskCard(ElementTask task) {
+    final isDone = !task.isPending;
+    final statusText = isDone ? 'Done' : 'To-do';
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Category subtitle
+                Text(
+                  task.category,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 6),
+
+                // Task Name
+                Text(
+                  task.name,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: isDone ? Colors.grey : Colors.black87,
+                    decoration: isDone ? TextDecoration.lineThrough : null,
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Start Time & Status Tag Row
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.access_time_rounded,
+                      size: 16,
+                      color: primaryPurple,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      DateFormat('hh:mm a').format(task.startTime),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: primaryPurple,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const Spacer(),
+
+                    // Status Badge (Done / To-do)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color:
+                            isDone
+                                ? const Color(0xFFE8E5FF)
+                                : const Color(0xFFE0F2FE),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        statusText,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color:
+                              isDone ? primaryPurple : const Color(0xFF0284C7),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+
+          // Action/Category Icon on Top-Right
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFEBF0), // Soft background container
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.shopping_bag_outlined,
+              size: 20,
+              color: Colors.pinkAccent,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  bool isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 }
