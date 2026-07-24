@@ -274,36 +274,25 @@ class _HomeScreenState extends State<HomeScreen> {
       body: SafeArea(
         child: BlocBuilder<TodoCubit, TodoState>(
           builder: (context, state) {
-            if (state is TodoLoading) {
-              return const Center(
-                child: CircularProgressIndicator(color: Color(0xFF5E42EB)),
-              );
-            }
-            if (state is TodoEmpty) {
-              return const Center(child: Text('No tasks yet.'));
-            }
-            if (state is TaskError) {
-              return Center(
-                child: Text(
-                  'Failed to load tasks: ${state.message ?? 'Unknown error'}',
-                ),
-              );
-            }
-            final tasks = (state as TodoLoaded).tasks;
+            List<ElementTask> inProgressTasks = [];
+            double completionRate = 0.0;
 
-            final totalTasks = tasks.length;
-            final completedTasks = tasks.where((t) => !t.isPending).length;
-            final inProgressTasks =
-                tasks.where((t) => t.isPending).toList()..sort((a, b) {
-                  final priorityA = _getUrgencyPriority(a.urgencyLevel);
-                  final priorityB = _getUrgencyPriority(b.urgencyLevel);
-                  if (priorityA != priorityB) {
-                    return priorityA.compareTo(priorityB);
-                  }
-                  return a.startTime.compareTo(b.startTime);
-                });
-            final completionRate =
-                totalTasks == 0 ? 0.0 : completedTasks / totalTasks;
+            if (state is TodoLoaded) {
+              final tasks = state.tasks;
+              final totalTasks = tasks.length;
+              final completedTasks = tasks.where((t) => !t.isPending).length;
+              inProgressTasks =
+                  tasks.where((t) => t.isPending).toList()..sort((a, b) {
+                    final priorityA = _getUrgencyPriority(a.urgencyLevel);
+                    final priorityB = _getUrgencyPriority(b.urgencyLevel);
+                    if (priorityA != priorityB) {
+                      return priorityA.compareTo(priorityB);
+                    }
+                    return a.startTime.compareTo(b.startTime);
+                  });
+              completionRate =
+                  totalTasks == 0 ? 0.0 : completedTasks / totalTasks;
+            }
 
             return SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
@@ -444,8 +433,25 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
-
-                  if (inProgressTasks.isEmpty)
+                  if (state is TodoLoading)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 40),
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          color: Color(0xFF5E42EB),
+                        ),
+                      ),
+                    )
+                  else if (state is TaskError)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 40),
+                      child: Center(
+                        child: Text(
+                          'Failed to load tasks: ${state.message ?? 'Unknown error'}',
+                        ),
+                      ),
+                    )
+                  else if (state is TodoEmpty || inProgressTasks.isEmpty)
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(24),
@@ -454,14 +460,24 @@ class _HomeScreenState extends State<HomeScreen> {
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: const Color(0xFFEEF2F6)),
                       ),
-                      child: const Center(
-                        child: Text(
-                          'No tasks in progress today! 🎉',
-                          style: TextStyle(
-                            color: Color(0xFF64748B),
-                            fontSize: 14,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.asset(
+                            'assets/images/no_todo.png',
+                            height: 350,
+                            fit: BoxFit.contain,
                           ),
-                        ),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'No tasks in progress today! 🎉',
+                            style: TextStyle(
+                              color: Color(0xFF64748B),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
                     )
                   else

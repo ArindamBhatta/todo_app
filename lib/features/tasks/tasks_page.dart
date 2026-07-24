@@ -80,6 +80,29 @@ class _TasksPageState extends State<TasksPage> {
                       child: Text('Failed to load tasks: ${state.message}'),
                     );
                   }
+                  if (state is TodoEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.asset(
+                            'assets/images/no_todo.png',
+                            height: 200,
+                            fit: BoxFit.contain,
+                          ),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'No tasks found',
+                            style: TextStyle(
+                              color: Color(0xFF64748B),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
 
                   final tasks = (state as TodoLoaded).tasks;
 
@@ -107,15 +130,19 @@ class _TasksPageState extends State<TasksPage> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.assignment_outlined,
-                            size: 48,
-                            color: Colors.grey.shade400,
+                          Image.asset(
+                            'assets/images/no_todo.png',
+                            height: 400,
+                            fit: BoxFit.contain,
                           ),
-                          const SizedBox(height: 8),
-                          Text(
+                          const SizedBox(height: 12),
+                          const Text(
                             'No tasks found for this day',
-                            style: TextStyle(color: Colors.grey.shade600),
+                            style: TextStyle(
+                              color: Color(0xFF64748B),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ],
                       ),
@@ -178,7 +205,7 @@ class _TasksPageState extends State<TasksPage> {
                 boxShadow: [
                   if (!isSelected)
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
+                      color: Colors.black.withValues(alpha: 0.03),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -280,7 +307,7 @@ class _TasksPageState extends State<TasksPage> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
