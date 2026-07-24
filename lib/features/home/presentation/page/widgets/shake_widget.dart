@@ -15,16 +15,22 @@ class ShakeWidget extends StatefulWidget {
 class _ShakeWidgetState extends State<ShakeWidget>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
+  late final Animation<double> _curveAnimation;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 700),
       vsync: this,
     );
+    _curveAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOutCubic,
+    );
+
     if (widget.shake) {
-      _controller.repeat();
+      _controller.forward(from: 0.0);
     }
   }
 
@@ -33,7 +39,7 @@ class _ShakeWidgetState extends State<ShakeWidget>
     super.didUpdateWidget(oldWidget);
     if (widget.shake != oldWidget.shake) {
       if (widget.shake) {
-        _controller.repeat();
+        _controller.forward(from: 0.0);
       } else {
         _controller.stop();
         _controller.reset();
@@ -50,16 +56,30 @@ class _ShakeWidgetState extends State<ShakeWidget>
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: _controller,
+      animation: _curveAnimation,
       builder: (context, child) {
-        if (!widget.shake) return child!;
-        final double progress = _controller.value;
-        final double offset = math.sin(progress * 4 * math.pi) * 1.5;
-        final double rotation = math.sin(progress * 4 * math.pi) * 0.012;
+        if (!widget.shake || !_controller.isAnimating) return child!;
+        final double pulse = math.sin(_curveAnimation.value * math.pi);
+        final double scale = 1.0 + (pulse * 0.035);
 
-        return Transform.translate(
-          offset: Offset(offset, 0),
-          child: Transform.rotate(angle: rotation, child: child),
+        return Transform.scale(
+          scale: scale,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: pulse > 0.01
+                  ? [
+                      BoxShadow(
+                        color: const Color(0xFFEF4444)
+                            .withValues(alpha: 0.35 * pulse),
+                        blurRadius: 16 * pulse,
+                        spreadRadius: 2 * pulse,
+                      ),
+                    ]
+                  : null,
+            ),
+            child: child,
+          ),
         );
       },
       child: widget.child,

@@ -6,7 +6,6 @@ import 'package:todo/features/auth/presentation/logic/auth_manager.dart';
 import 'package:todo/features/auth/presentation/logic/auth_state.dart';
 import 'package:todo/features/home/presentation/logic/todo_cubit.dart';
 import 'package:todo/features/home/presentation/page/details_page.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:todo/features/home/presentation/page/widgets/category_style.dart';
 import 'package:todo/features/home/presentation/page/widgets/shake_widget.dart';
 
@@ -18,42 +17,25 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  int _getUrgencyPriority(String urgencyLevel) {
+    switch (urgencyLevel) {
+      case 'Urgent Important':
+        return 1;
+      case 'Not Important Urgent':
+        return 2;
+      case 'Not Urgent Important':
+        return 3;
+      case 'Not Important Not Urgent':
+        return 4;
+      default:
+        return 5;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
-    // _checkNotificationPermissions();
   }
-
-  // void _checkNotificationPermissions() {
-  //   AwesomeNotifications().isNotificationAllowed().then((isAllowed) {
-  //     if (!mounted) return;
-  //     if (!isAllowed) {
-  //       showDialog(
-  //         context: context,
-  //         builder:
-  //             (ctx) => AlertDialog(
-  //               title: const Text('Enable Notifications'),
-  //               content: const Text(
-  //                 'To get alerts for Urgent and Important tasks, please allow notifications in settings.',
-  //               ),
-  //               actions: [
-  //                 TextButton(
-  //                   onPressed: () => Navigator.pop(ctx),
-  //                   child: const Text('Later'),
-  //                 ),
-  //                 TextButton(
-  //                   onPressed: () {
-  //                     Navigator.pop(ctx);
-  //                     //Todo: check
-  //                   },
-  //                   child: const Text('Allow'),
-  //                 ),
-  //               ],
-  //             ),
-  //       );
-  //     }
-  //   });
-  // }
 
   Widget _buildProfileHeader() {
     return BlocBuilder<AuthManager, AuthState>(
@@ -62,6 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
             authState is AuthAuthenticated
                 ? authState.user.displayName
                 : 'Guest';
+
         final String? photoUrl =
             authState is AuthAuthenticated ? authState.user.photoUrl : null;
 
@@ -124,34 +107,7 @@ class _HomeScreenState extends State<HomeScreen> {
               alignment: Alignment.topRight,
               children: [
                 IconButton(
-                  onPressed: () {
-                    //TODO: check
-                  },
-                  // onPressed: () async {
-                  //   final isAllowed =
-                  //       await AwesomeNotifications().isNotificationAllowed();
-                  //   if (!isAllowed) {
-                  //     await AwesomeNotifications()
-                  //         .requestPermissionToSendNotifications()
-                  //         .then((allowed) {
-                  //           if (!allowed) {
-                  //             AwesomeNotifications()
-                  //                 .showNotificationConfigPage();
-                  //           }
-                  //         });
-                  //   } else {
-                  //     await AwesomeNotifications().createNotification(
-                  //       content: NotificationContent(
-                  //         id: 9999,
-                  //         channelKey: 'urgent_important_channel',
-                  //         title: '🔔 Notification System Active!',
-                  //         body:
-                  //             'Local notifications are active and ready for Urgent Important tasks.',
-                  //         notificationLayout: NotificationLayout.Default,
-                  //       ),
-                  //     );
-                  //   }
-                  // },
+                  onPressed: () {},
                   icon: const Icon(
                     Icons.notifications_rounded,
                     color: Color(0xFF0F172A),
@@ -336,7 +292,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
             final totalTasks = tasks.length;
             final completedTasks = tasks.where((t) => !t.isPending).length;
-            final inProgressTasks = tasks.where((t) => t.isPending).toList();
+            final inProgressTasks = tasks.where((t) => t.isPending).toList()
+              ..sort((a, b) {
+                final priorityA = _getUrgencyPriority(a.urgencyLevel);
+                final priorityB = _getUrgencyPriority(b.urgencyLevel);
+                if (priorityA != priorityB) {
+                  return priorityA.compareTo(priorityB);
+                }
+                return a.startTime.compareTo(b.startTime);
+              });
             final completionRate =
                 totalTasks == 0 ? 0.0 : completedTasks / totalTasks;
 
