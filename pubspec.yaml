@@ -42,6 +42,9 @@ dependencies:
   flutter_local_notifications: ^20.1.0
   flutter_secure_storage: ^10.3.1
   crypto: ^3.0.7
+  file_picker: ^8.1.7
+  image_picker: ^1.2.3
+  path_provider: ^2.1.6
 
 
 #
@@ -55,19 +58,11 @@ flutter:
   uses-material-design: true
 
   assets:
-    - 'assets/finance.jpg'
-    - 'assets/Career.jpg'
-    - 'assets/Health.jpg'
-    - 'assets/Leisure.jpg'
-    - 'assets/Office.jpg'
-    - 'assets/Home.jpg'
-    - 'assets/Personal.jpg'
-    - 'assets/Self_Development.jpg'
-    - 'assets/Fun.jpg'
-    - 'assets/never_miss_deadline.png'
-    - 'assets/plan_your_day.png'
-    - 'assets/track_progress_daily.png'
-    - 'assets/prioritize_what_matters.png'
+    - assets/images/splash/
+    - assets/images/onboarding/
+    - assets/images/categories/
+    - assets/icons/
+    
 
   
    
